@@ -1,3 +1,6 @@
+
+
+// Expose user language preference to all views
 const express = require("express");
 const path = require("path");
 const app = express();
@@ -110,96 +113,54 @@ app.get('/debug/sockets', (req, res) => {
 });
 
 
-// Map users to sockets (top-level so it persists across connections)
-// ============================================
-// SOCKET.IO CONFIGURATION
-// ============================================
-
-const teleVetSocketHandler = require('./server/sockets/teleVetSocket');
-const teleVetHandlers = teleVetSocketHandler(io);
 
 // Map users to sockets (top-level so it persists across connections)
 const userSocketMap = {}; // { userId: socketId }
 
 io.on("connection", (socket) => {
-    console.log('[socket] New connection:', socket.id);
 
-    // ========== AUTHENTICATION ==========
-    
     // Register a logged-in user with their socket id
     socket.on('register', (userId) => {
         try {
-            if (userId && userId.trim()) {
+            if (userId) {
                 userSocketMap[userId] = socket.id;
                 console.log('[socket] registered user', userId, '->', socket.id);
-                
-                // Notify the client they're registered
-                socket.emit('registered', { userId, socketId: socket.id });
             }
         } catch (e) {
             console.warn('[socket] register error', e);
         }
     });
 
-    // ========== TELEVET SPECIFIC HANDLERS ==========
-    
-    // Farmer calls vet (video consultation)
-    socket.on('callUser', (data) => {
-        if (data.type === 'teleVet' || data.roomId?.includes('vetroom')) {
-            teleVetHandlers.handleTeleVetCallUser(socket, io, userSocketMap)(data);
+    // Caller requests to call a user by their userId
+    socket.on('callUser', ({ toUserId, roomId, fromUserId, fromName }) => {
+        console.log('[socket] callUser', { toUserId, roomId, fromUserId });
+        const targetSocketId = userSocketMap[toUserId];
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('incomingCall', { fromUserId, fromName, roomId });
         } else {
-            // Regular call handling (existing logic)
-            const { toUserId, roomId, fromUserId, fromName } = data;
-            console.log('[socket] callUser', { toUserId, roomId, fromUserId });
-            const targetSocketId = userSocketMap[toUserId];
-            if (targetSocketId) {
-                io.to(targetSocketId).emit('incomingCall', { fromUserId, fromName, roomId });
-            } else {
-                console.log('[socket] callUser - target not found');
-                socket.emit('noAnswer', { toUserId });
-            }
+            // Inform caller there's no connected socket for the callee
+            console.log('[socket] callUser - target not found. userSocketMap keys:', Object.keys(userSocketMap));
+            socket.emit('noAnswer', { toUserId });
         }
     });
 
-    // Vet accepts video call
-    socket.on('acceptCall', (data) => {
-        if (data.vetId && data.farmerId) {
-            // TeleVet accept
-            teleVetHandlers.handleTeleVetAcceptCall(socket, io, userSocketMap)(data);
-        } else {
-            // Regular call accept (existing logic)
-            const { callerUserId, roomId } = data;
-            const callerSocketId = userSocketMap[callerUserId];
-            console.log('[socket] acceptCall', { callerUserId, roomId });
-            if (callerSocketId) {
-                io.to(callerSocketId).emit('callAccepted', { roomId });
-            }
+    // Callee accepts the call — notify the caller
+    socket.on('acceptCall', ({ callerUserId, roomId }) => {
+        const callerSocketId = userSocketMap[callerUserId];
+        console.log('[socket] acceptCall', { callerUserId, roomId, callerSocketId });
+        if (callerSocketId) {
+            io.to(callerSocketId).emit('callAccepted', { roomId });
         }
     });
 
-    // Vet rejects video call
-    socket.on('rejectCall', (data) => {
-        if (data.vetId) {
-            // TeleVet reject
-            teleVetHandlers.handleTeleVetRejectCall(socket, io, userSocketMap)(data);
-        } else {
-            // Regular call reject (existing logic)
-            const { callerUserId } = data;
-            const callerSocketId = userSocketMap[callerUserId];
-            if (callerSocketId) {
-                io.to(callerSocketId).emit('callRejected', { by: socket.id });
-            }
+    // Callee rejects the call
+    socket.on('rejectCall', ({ callerUserId }) => {
+        const callerSocketId = userSocketMap[callerUserId];
+        if (callerSocketId) {
+            io.to(callerSocketId).emit('callRejected', { by: socket.id });
         }
     });
 
-    // End video call
-    socket.on('endCall', (data) => {
-        if (data.roomId && data.userId) {
-            teleVetHandlers.handleTeleVetEndCall(socket, io, userSocketMap)(data);
-        }
-    });
-
-    // ========== WEBRTC SIGNALING ==========
 
     socket.on("joinRoom", (roomId) => {
         try {
@@ -225,14 +186,37 @@ io.on("connection", (socket) => {
     });
 
     socket.on("iceCandidate", ({ roomId, candidate }) => {
+        // candidate is an RTCIceCandidateInit-like object
         console.log('[socket] forwarding iceCandidate to room', roomId);
         socket.to(roomId).emit("iceCandidate", { candidate });
     });
 
-    // ========== CHAT HANDLERS ==========
+    // Clean up mapping when socket disconnects
+    socket.on('disconnect', () => {
+        try {
+            for (const [userId, sId] of Object.entries(userSocketMap)) {
+                if (sId === socket.id) {
+                    delete userSocketMap[userId];
+                    console.log('[socket] disconnected, removed mapping for user', userId);
+                }
+            }
+        } catch (e) {
+            console.warn('[socket] disconnect cleanup error', e);
+        }
+    });
 
+    // Chat message handlers
     const Message = require('./models/Message');
     const User = require('./models/User');
+
+    socket.on('joinRoom', async ({ roomId }) => {
+        try {
+            socket.join(roomId);
+            console.log('[socket] joined chat room', roomId);
+        } catch (e) {
+            console.warn('[socket] joinRoom error', e);
+        }
+    });
 
     socket.on('sendMessage', async (payload) => {
         try {
@@ -283,7 +267,7 @@ io.on("connection", (socket) => {
 
     socket.on('updateMessage', async (payload) => {
         try {
-            const updated = await Message.findByIdAndUpdate(payload._id, {
+            const updated = await Message.findByIdAndUpdate(msgId._id, {
                 text: payload.text,
                 edited: true
             }, { new: true }).populate('user');
@@ -306,20 +290,6 @@ io.on("connection", (socket) => {
         }
     });
 
-    // ========== DISCONNECT ==========
-
-    socket.on('disconnect', () => {
-        try {
-            for (const [userId, sId] of Object.entries(userSocketMap)) {
-                if (sId === socket.id) {
-                    delete userSocketMap[userId];
-                    console.log('[socket] disconnected, removed mapping for user', userId);
-                }
-            }
-        } catch (e) {
-            console.warn('[socket] disconnect cleanup error', e);
-        }
-    });
 
 });
 

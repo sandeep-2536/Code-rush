@@ -136,13 +136,13 @@
     window.CURRENT_USER = null;
     window.SERVER_USER_LANG = "<%= typeof userLang !== 'undefined' ? userLang : 'en' %>"; // from Express
     
-    <%_ if (user) { _%>
-    CURRENT_USER = {
-        _id: "<%- user._id %>",
-        name: "<%- user.name %>",
-        profileImage: "<%- user.profileImage || '/images/default-user.png' %>"
-    };
-    <%_ } _%>
+    // <%_ if (user) { _%>
+    // CURRENT_USER = {
+    //     _id: "<%- user._id %>",
+    //     name: "<%- user.name %>",
+    //     profileImage: "<%- user.profileImage || '/images/default-user.png' %>"
+    // };
+    // <%_ } _%>
 
     // Helper to render Mobile Profile Link with Translation
     function renderMobileProfile() {
