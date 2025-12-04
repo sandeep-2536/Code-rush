@@ -67,6 +67,76 @@
 
     <%- include("../layouts/header") %>
 
+    <!-- LOCATION MODAL (Shows if village is not set) -->
+    <% if (!user.village) { %>
+        <div id="locationModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-800 mb-2">Set Your Location</h2>
+                    <p class="text-slate-600 text-sm">Help us provide weather-based farm advice</p>
+                </div>
+
+                <form id="locationForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Village/City</label>
+                        <input type="text" id="villageInput" name="village" placeholder="e.g., Bengaluru" 
+                               class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
+                               required>
+                        <p class="text-xs text-slate-500 mt-1">💡 Use a well-known city name if your village is small</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">State</label>
+                        <input type="text" id="stateInput" name="state" placeholder="e.g., Karnataka" 
+                               class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
+                               required>
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg transition-colors">
+                        Save Location & Get Weather
+                    </button>
+                </form>
+            </div>
+        </div>
+    <% } %>
+
+    <!-- EDIT LOCATION MODAL (Always available, hidden by default) -->
+    <div id="editLocationModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Update Location</h2>
+                <p class="text-slate-600 text-sm">Change your village or state for accurate weather</p>
+            </div>
+
+            <form id="editLocationForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Village/City</label>
+                    <input type="text" id="editVillageInput" name="village" placeholder="e.g., Bengaluru" 
+                           class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
+                           value="<%= user.village || '' %>" required>
+                    <p class="text-xs text-slate-500 mt-1">💡 Use a well-known city name if your village is small</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">State</label>
+                    <input type="text" id="editStateInput" name="state" placeholder="e.g., Karnataka" 
+                           class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
+                           value="<%= user.state || '' %>" required>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="document.getElementById('editLocationModal').style.display='none'" class="flex-1 bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold py-2 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg transition-colors">
+                        Update & Refresh
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         <!-- HEADER SECTION -->
@@ -78,7 +148,8 @@
                 <p class="text-slate-500 mt-1 flex items-center gap-2">
                     <!-- Location Pin Icon -->
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    <%= user.village || "Unknown Village" %>, <%= user.state || "India" %>
+                    <span id="locationDisplay"><%= user.village || "Unknown Village" %>, <%= user.state || "India" %></span>
+                    <button onclick="document.getElementById('editLocationModal').style.display='flex'" class="text-xs text-green-600 hover:text-green-800 ml-2 font-semibold">Edit</button>
                 </p>
             </div>
             <div class="text-right hidden md:block">
@@ -312,6 +383,62 @@
 
     <!-- CANVAS SCRIPT FOR WEATHER CHART -->
     <script>
+        // Handle Location Form Submission (initial setup)
+        const locationForm = document.getElementById('locationForm');
+        if (locationForm) {
+            locationForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const village = document.getElementById('villageInput').value;
+                const state = document.getElementById('stateInput').value;
+                await submitLocationForm(village, state);
+            });
+        }
+
+        // Handle Edit Location Form Submission
+        const editLocationForm = document.getElementById('editLocationForm');
+        if (editLocationForm) {
+            editLocationForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const village = document.getElementById('editVillageInput').value;
+                const state = document.getElementById('editStateInput').value;
+                await submitLocationForm(village, state);
+            });
+        }
+
+        // Submit location and refresh
+        async function submitLocationForm(village, state) {
+            try {
+                const res = await fetch('/dashboard/saveLocation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ village, state })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    console.log('[dashboard] Location saved:', data.user);
+                    // Hide modals
+                    const locationModal = document.getElementById('locationModal');
+                    const editModal = document.getElementById('editLocationModal');
+                    if (locationModal) locationModal.style.display = 'none';
+                    if (editModal) editModal.style.display = 'none';
+                    
+                    // Update location display
+                    const locationDisplay = document.getElementById('locationDisplay');
+                    if (locationDisplay) {
+                        locationDisplay.textContent = `${data.user.village}, ${data.user.state}`;
+                    }
+                    
+                    // Reload to fetch fresh weather
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    alert('Error saving location: ' + data.message);
+                }
+            } catch (err) {
+                console.error('[dashboard] Location save error:', err);
+                alert('Failed to save location. Please try again.');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // Get Weather Data safely from DOM
             const weatherElement = document.getElementById('weatherData');

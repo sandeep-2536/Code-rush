@@ -90,8 +90,35 @@ exports.getDashboard = async (req, res) => {
 
             } catch (err) {
                 console.error("Weather/AI Error:", err && err.message ? err.message : err);
-                // Fallback if API fails
-                aiAdvice = "Could not fetch weather advice at this moment.";
+                
+                // Check if it's a 404 (location not found)
+                if (err.response && err.response.status === 404) {
+                    console.warn('[weather] Location not found in OpenWeatherMap:', locationQuery);
+                    // Try fallback to state if location failed
+                    const fallbackLocation = user && user.state ? user.state : process.env.DEFAULT_WEATHER_CITY || 'Delhi';
+                    console.log('[weather] Trying fallback location:', fallbackLocation);
+                    
+                    try {
+                        const fallbackRes = await axios.get(`https://api.openweathermap.org/data/2.5/forecast?q=${fallbackLocation}&units=metric&appid=${apiKey}`);
+                        const fallbackList = fallbackRes.data && fallbackRes.data.list ? fallbackRes.data.list : [];
+                        weatherData = fallbackList
+                            .filter(reading => reading.dt_txt.includes("12:00:00"))
+                            .slice(0, 5)
+                            .map(day => ({
+                                date: new Date(day.dt_txt).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
+                                temp: Math.round(day.main.temp),
+                                icon: day.weather[0].icon,
+                                desc: day.weather[0].main
+                            }));
+                        aiAdvice = `Weather data for ${fallbackLocation} region. Please enter a valid village/city name for more accurate forecasts.`;
+                    } catch (fallbackErr) {
+                        console.error('[weather] Fallback location also failed:', fallbackErr.message);
+                        aiAdvice = `Could not fetch weather for "${locationQuery}". Please check the village/city name and try again.`;
+                    }
+                } else {
+                    // Other API errors
+                    aiAdvice = "Could not fetch weather advice at this moment. Please try again later.";
+                }
             }
         } else {
             if (!apiKey) {

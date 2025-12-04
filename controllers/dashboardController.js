@@ -1,5 +1,6 @@
 const Post = require("../models/Post");
 const Comment = require("../models/Comment");
+const User = require("../models/User");
 const axios = require('axios');
 
 exports.getDashboard = async (req, res) => {
@@ -72,28 +73,64 @@ exports.getDashboard = async (req, res) => {
 
         // Try to fetch simple current weather for user's location (if available)
         let weather = [];
+        let locationForWeather = '';
         try {
             const apiKey = process.env.OPENWEATHERMAP_API_KEY;
             // Try to use village, city or state as a simple query
-            const locationQuery = (req.session.user && (req.session.user.village || req.session.user.city || req.session.user.state)) || process.env.DEFAULT_WEATHER_CITY;
-            if (apiKey && locationQuery) {
-                const weatherRes = await axios.get('https://api.openweathermap.org/data/2.5/weather', {
+            locationForWeather = (req.session.user && (req.session.user.village || req.session.user.city || req.session.user.state)) || process.env.DEFAULT_WEATHER_CITY || '';
+            if (apiKey && locationForWeather) {
+                // Fetch 5-day forecast for better weather data
+                const weatherRes = await axios.get('https://api.openweathermap.org/data/2.5/forecast', {
                     params: {
-                        q: locationQuery,
+                        q: locationForWeather,
                         units: 'metric',
                         appid: apiKey
                     }
                 });
-                const w = weatherRes.data;
-                weather = [{
-                    date: new Date().toLocaleDateString(),
-                    icon: (w.weather && w.weather[0] && w.weather[0].icon) || '01d',
-                    temp: Math.round(w.main && w.main.temp) || ''
-                }];
+                const list = weatherRes.data && weatherRes.data.list ? weatherRes.data.list : [];
+                
+                // Extract one reading per day at 12:00 PM (noon) for next 5 days
+                weather = list
+                    .filter(reading => reading.dt_txt.includes("12:00:00"))
+                    .slice(0, 5)
+                    .map(day => ({
+                        date: new Date(day.dt_txt).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
+                        icon: (day.weather && day.weather[0] && day.weather[0].icon) || '01d',
+                        temp: Math.round(day.main && day.main.temp) || '',
+                        desc: (day.weather && day.weather[0] && day.weather[0].main) || 'Clear'
+                    }));
             }
         } catch (e) {
-            console.warn('[dashboard] weather fetch failed:', e.message);
-            weather = [];
+            console.warn('[dashboard] weather fetch failed for location:', locationForWeather, 'Error:', e.message);
+            
+            // If 404, try fallback to state
+            if (e.response && e.response.status === 404 && req.session.user && req.session.user.state) {
+                console.log('[dashboard] Location not found, trying state:', req.session.user.state);
+                try {
+                    const fallbackRes = await axios.get('https://api.openweathermap.org/data/2.5/forecast', {
+                        params: {
+                            q: req.session.user.state,
+                            units: 'metric',
+                            appid: process.env.OPENWEATHERMAP_API_KEY
+                        }
+                    });
+                    const fallbackList = fallbackRes.data && fallbackRes.data.list ? fallbackRes.data.list : [];
+                    weather = fallbackList
+                        .filter(reading => reading.dt_txt.includes("12:00:00"))
+                        .slice(0, 5)
+                        .map(day => ({
+                            date: new Date(day.dt_txt).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
+                            icon: (day.weather && day.weather[0] && day.weather[0].icon) || '01d',
+                            temp: Math.round(day.main && day.main.temp) || '',
+                            desc: (day.weather && day.weather[0] && day.weather[0].main) || 'Clear'
+                        }));
+                } catch (fallbackErr) {
+                    console.warn('[dashboard] fallback weather also failed:', fallbackErr.message);
+                    weather = [];
+                }
+            } else {
+                weather = [];
+            }
         }
 
         res.render("dashboard/dashboard", {
@@ -127,5 +164,37 @@ exports.getDashboard = async (req, res) => {
             , weather: [],
             aiAdvice: ''
         });
+    }
+};
+
+// Save user's location (village, state) to database
+exports.saveLocation = async (req, res) => {
+    try {
+        if (!req.session.user) return res.status(401).json({ success: false, message: 'Not authenticated' });
+        
+        const { village, state } = req.body;
+        if (!village || !state) {
+            return res.status(400).json({ success: false, message: 'Village and state are required' });
+        }
+
+        const userId = req.session.user._id;
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { village, state },
+            { new: true }
+        );
+
+        // Update session user as well
+        req.session.user.village = updatedUser.village;
+        req.session.user.state = updatedUser.state;
+
+        res.json({ 
+            success: true, 
+            message: 'Location saved successfully',
+            user: updatedUser 
+        });
+    } catch (err) {
+        console.error('[dashboard] saveLocation error:', err);
+        res.status(500).json({ success: false, message: 'Failed to save location' });
     }
 };
