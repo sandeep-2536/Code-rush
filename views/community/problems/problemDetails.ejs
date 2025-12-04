@@ -26,7 +26,7 @@
             
             <!-- User Info -->
             <div class="flex items-center gap-4 mb-6">
-                <img src="<%= problem.user.profileImage || '/images/default-user.png' %>" 
+                <img src="<%= problem.user.profileImage || '/images/default-user.svg' %>" 
                      class="w-16 h-16 rounded-full object-cover border-4 border-purple-200">
                 <div class="flex-1">
                     <h2 class="text-2xl font-bold text-gray-800"><%= problem.user.name %></h2>
@@ -95,7 +95,7 @@
                 <% comments.forEach((comment, index) => { %>
                 <div class="comment-card">
                     <div class="flex items-start gap-4">
-                        <img src="<%= comment.user.profileImage || '/images/default-user.png' %>" 
+                        <img src="<%= comment.user.profileImage || '/images/default-user.svg' %>" 
                              class="w-12 h-12 rounded-full object-cover border-2 border-green-200 flex-shrink-0">
                         <div class="flex-1">
                             <div class="flex items-center gap-3 mb-2">

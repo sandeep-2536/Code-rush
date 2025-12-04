@@ -68,7 +68,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const animalRoutes = require('./routes/animalRoutes');
 const cropRoutes = require('./routes/cropRoutes');
 const vetAuthRoutes = require("./routes/vetAuthRoutes");
-// teleVet routes removed
+const callRoutes = require('./routes/callRoutes');
 const dealerAuthRoutes = require('./routes/dealerAuthRoutes');
 const stockRoutes = require('./routes/stockRoutes');
 const i18nRoutes = require('./routes/i18nRoutes');
@@ -95,6 +95,7 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/animals", animalRoutes);
 app.use("/crops", cropRoutes);
 app.use("/vet-auth", vetAuthRoutes);
+app.use("/call", callRoutes);
 app.use("/dealer-auth", dealerAuthRoutes);
 app.use("/stock", stockRoutes);
 app.use('/admin', adminRoutes);
@@ -114,6 +115,9 @@ app.get('/debug/sockets', (req, res) => {
 
 
 // --- Socket.IO Handlers ---
+
+// Initialize teleVet routes with socket.io instance and user socket map
+teleVetroutes.setSocketIO(io, userSocketMap);
 
 io.on("connection", (socket) => {
 

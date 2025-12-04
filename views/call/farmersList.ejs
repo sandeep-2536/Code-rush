@@ -23,7 +23,7 @@
 
             <% if (f._id.toString() !== user._id.toString()) { %> <!-- hide current user -->
                 <div class="farmer-card">
-                    <img src="<%= f.profileImage || '/images/default-user.png' %>" class="avatar-call">
+                    <img src="<%= f.profileImage || '/images/default-user.svg' %>" class="avatar-call">
 
                     <div class="info">
                         <h3><%= f.name %></h3>

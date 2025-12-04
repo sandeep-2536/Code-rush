@@ -30,7 +30,7 @@
                 
                 <% if (user) { %>
                 <a href="/dashboard" class="flex items-center gap-2 bg-white/20 hover:bg-white/30 rounded-lg px-4 py-2">
-                    <img src="<%= user.profileImage || '/images/default-user.png' %>" class="w-8 h-8 rounded-full border border-green-300">
+                    <img src="<%= user.profileImage || '/images/default-user.svg' %>" class="w-8 h-8 rounded-full border border-green-300">
                     <span class="text-white font-medium"><%= user.name %></span>
                 </a>
                 <% } else { %>

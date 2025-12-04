@@ -3,188 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aarohi Agriculture - Digital Farming Assistant</title>
-    <link rel="stylesheet" href="/css/output.css">
-</head>
-<body class="bg-linear-to-br from-green-50 via-white to-yellow-50 min-h-screen" data-i18n-voice="home.voiceIntro" data-lang="<%= lang %>">
+    <title>Aarohi Agriculture - Smart Farming</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
 
-    <!-- Header -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Montserrat', 'sans-serif'] },
+                    animation: {
+                        'fade-in': 'fadeIn 1s ease-out',
+                        'slide-up': 'slideUp 0.8s ease-out forwards',
+                        'pulse-ring': 'pulseRing 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(40px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        pulseRing: {
+                            '0%': { transform: 'scale(0.8)', opacity: '0.8' },
+                            '80%, 100%': { transform: 'scale(2)', opacity: '0' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
+        
+        /* Card Hover Effects */
+        .portal-card {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .portal-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.4);
+        }
+        .portal-card:hover img {
+            transform: scale(1.15);
+        }
+        .portal-card img {
+            transition: transform 0.7s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 antialiased" data-i18n-voice="home.voiceIntro" data-lang="<%= lang %>">
+
     <%- include("../layouts/header") %>
 
-    <!-- Hero Section with Background Image -->
-    <section class="relative overflow-hidden py-20 px-4" style="background-image: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url('home_bg.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; min-height: 600px; display: flex; align-items: center; justify-content: center;">
-        <div class="max-w-6xl mx-auto text-center">
-            <h1 class="text-5xl md:text-7xl font-bold text-white mb-6 animate-fadeIn" data-i18n="home.welcome">
-                Welcome Farmer
+    <section class="relative h-[600px] flex items-center justify-center overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-gray-50 z-10"></div>
+            <img src="home_bg.jpg" alt="Farm Field" class="w-full h-full object-cover">
+        </div>
+
+        <div class="relative z-20 text-center px-4 w-full max-w-4xl mt-10">
+            <h1 class="text-5xl md:text-7xl font-black text-white mb-6 drop-shadow-2xl tracking-tight animate-fade-in">
+                Upliftment of  <span class="text-green-400">Farmers</span>
             </h1>
-            
-            <p class="text-xl md:text-2xl text-green-100 mb-12 max-w-2xl mx-auto">
-                <span data-i18n="home.prompt">Tap or Speak to use the App</span>
+            <p class="text-xl text-gray-200 mb-12 font-medium tracking-wide animate-slide-up" style="animation-delay: 0.1s;" data-i18n="home.prompt">
+                Your Digital Agriculture Assistant
             </p>
-            
-            <!-- Voice Button -->
-            <button onclick="startVoiceCommand()" class="btn-voice mx-auto" type="button">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
-                </svg>
-                <span data-i18n="home.speakNow">Speak Now</span>
-            </button>
 
-            <!-- Quick Stats -->
-            <div class="grid grid-cols-3 gap-4 max-w-3xl mx-auto mt-16">
-                <div class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 text-white">
-                    <div class="text-4xl font-bold">1000+</div>
-                    <div class="text-sm opacity-90" data-i18n="home.statsActiveFarmers">Active Farmers</div>
-                </div>
-                <div class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 text-white">
-                    <div class="text-4xl font-bold">50+</div>
-                    <div class="text-sm opacity-90" data-i18n="home.statsGovtSchemes">Govt Schemes</div>
-                </div>
-                <div class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 text-white">
-                    <div class="text-4xl font-bold">24/7</div>
-                    <div class="text-sm opacity-90" data-i18n="home.statsAISupport">AI Support</div>
-                </div>
+            <div class="relative flex justify-center items-center animate-slide-up" style="animation-delay: 0.2s;">
+                <div class="absolute w-32 h-32 bg-green-500 rounded-full animate-pulse-ring opacity-50"></div>
+                <div class="absolute w-32 h-32 bg-green-500 rounded-full animate-pulse-ring opacity-50" style="animation-delay: 0.5s;"></div>
+                
+                <button onclick="startVoiceCommand()" class="relative z-10 bg-white text-green-700 w-24 h-24 rounded-full shadow-[0_0_40px_rgba(34,197,94,0.6)] flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                    <svg class="w-10 h-10 group-hover:text-green-600 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
             </div>
+            <p class="mt-4 text-white/80 text-sm uppercase tracking-widest font-bold animate-pulse" data-i18n="home.speakNow">Tap to Speak</p>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="py-16 px-4 max-w-7xl mx-auto">
-        <h2 class="text-4xl md:text-5xl font-bold text-center text-gray-800 mb-12" data-i18n="home.featuresTitle">
-            Main Features
-        </h2>
-        
+    <section class="max-w-7xl mx-auto px-4 -mt-20 relative z-30 pb-20">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            <!-- Government Schemes -->
-            <div onclick="window.location.href='/schemes'" class="feature-card cursor-pointer">
-                <div class="flex flex-col items-center text-center">
-                    <div class="bg-linear-to-br from-green-500 to-green-600 p-6 rounded-2xl mb-4 shadow-lg">
-                        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
-                            <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2" data-i18n="home.featSchemes">Government Schemes</h3>
-                    <p class="text-gray-600" data-i18n="home.featSchemesSub">Find subsidies easily</p>
+
+            <div onclick="window.location.href='/schemes'" class="portal-card h-80 rounded-3xl relative overflow-hidden cursor-pointer bg-gray-900 group shadow-2xl animate-slide-up" style="animation-delay: 0.1s;">
+                <img src="https://images.unsplash.com/photo-1760872645824-49f21b002e61?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8Z292ZXJubWVudCUyMG9mZmljZSUyMGluZGlhfGVufDB8fDB8fHww" class="absolute inset-0 w-full h-full object-cover opacity-80" alt="Money">
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+                <div class="absolute bottom-0 left-0 p-8">
+                    <h3 class="text-3xl font-bold text-white mb-1" data-i18n="home.featSchemes">Schemes</h3>
+                    <p class="text-green-400 font-semibold text-sm uppercase tracking-wider">Govt Support</p>
                 </div>
             </div>
 
-            <!-- AI Assistant -->
-            <div onclick="window.location.href='/ai/assistant'" class="feature-card cursor-pointer">
-                <div class="flex flex-col items-center text-center">
-                    <div class="bg-linear-to-br from-blue-500 to-blue-600 p-6 rounded-2xl mb-4 shadow-lg">
-                        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-2 0c0 .993-.241 1.929-.668 2.754l-1.524-1.525a3.997 3.997 0 00.078-2.183l1.562-1.562C15.802 8.249 16 9.1 16 10zm-5.165 3.913l1.58 1.58A5.98 5.98 0 0110 16a5.976 5.976 0 01-2.516-.552l1.562-1.562a4.006 4.006 0 001.789.027zm-4.677-2.796a4.002 4.002 0 01-.041-2.08l-.08.08-1.53-1.533A5.98 5.98 0 004 10c0 .954.223 1.856.619 2.657l1.54-1.54zm1.088-6.45A5.974 5.974 0 0110 4c.954 0 1.856.223 2.657.619l-1.54 1.54a4.002 4.002 0 00-2.346.033L7.246 4.668zM12 10a2 2 0 11-4 0 2 2 0 014 0z" clip-rule="evenodd"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2" data-i18n="home.featAI">Ask AI Assistant</h3>
-                    <p class="text-gray-600" data-i18n="home.featAISub">Get instant help</p>
+            <div onclick="window.location.href='/ai/assistant'" class="portal-card h-80 rounded-3xl relative overflow-hidden cursor-pointer bg-blue-900 group shadow-2xl animate-slide-up" style="animation-delay: 0.2s;">
+                <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=600" class="absolute inset-0 w-full h-full object-cover opacity-70" alt="Technology">
+                <div class="absolute inset-0 bg-gradient-to-t from-blue-900/90 via-transparent to-transparent"></div>
+                <div class="absolute bottom-0 left-0 p-8">
+                    <h3 class="text-3xl font-bold text-white mb-1" data-i18n="home.featAI">Ask AI</h3>
+                    <p class="text-blue-300 font-semibold text-sm uppercase tracking-wider">Instant Help</p>
                 </div>
             </div>
 
-            <!-- Community -->
-            <div onclick="window.location.href='/community'" class="feature-card cursor-pointer">
-                <div class="flex flex-col items-center text-center">
-                    <div class="bg-linear-to-br from-purple-500 to-purple-600 p-6 rounded-2xl mb-4 shadow-lg">
-                        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2" data-i18n="home.featCommunity">Farmer Community</h3>
-                    <p class="text-gray-600" data-i18n="home.featCommunitySub">Connect with farmers</p>
+            <div onclick="window.location.href='/weather'" class="portal-card h-80 rounded-3xl relative overflow-hidden cursor-pointer bg-gradient-to-br from-cyan-400 to-blue-600 group shadow-2xl animate-slide-up flex flex-col items-center justify-center text-center p-6" style="animation-delay: 0.3s;">
+                 <img src="https://images.unsplash.com/photo-1698213120340-3fd8fca285ea?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fHdlYXRoZXIlMjBmb3JlY2FzdHxlbnwwfHwwfHx8MA%3D%3D" class="absolute inset-0 w-full h-full object-cover opacity-70" alt="Technology">
+                <div class="absolute top-[-50px] right-[-50px] w-40 h-40 bg-yellow-300 rounded-full blur-2xl opacity-50 animate-pulse"></div>
+                
+                <svg class="w-20 h-20 text-white mb-4 " fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                <h3 class="text-4xl font-black text-white mb-2" data-i18n="home.featWeather">Weather</h3>
+                <p class="text-white/90 font-medium">Click for Forecast</p>
+            </div>
+
+            <div onclick="window.location.href='/community'" class="portal-card h-80 rounded-3xl relative overflow-hidden cursor-pointer bg-gray-900 group shadow-2xl animate-slide-up" style="animation-delay: 0.4s;">
+                <img src="https://media.istockphoto.com/id/1483599231/photo/beautiful-composition-of-happy-indian-farmers-standing-together-in-the-farm-land-four-farmers.webp?a=1&b=1&s=612x612&w=0&k=20&c=NPRWm2HPnGB7gudvgzV17GHhS4Y1jqhOnsmnNxm2o38=" class="absolute inset-0 w-full h-full object-cover opacity-80" alt="Farmers">
+                <div class="absolute inset-0 bg-gradient-to-t from-purple-900/90 via-transparent to-transparent"></div>
+                <div class="absolute bottom-0 left-0 p-8">
+                    <h3 class="text-3xl font-bold text-white mb-1" data-i18n="home.featCommunity">Community</h3>
+                    <p class="text-purple-300 font-semibold text-sm uppercase tracking-wider">Connect</p>
                 </div>
             </div>
 
-            <!-- Livestock -->
-            <div onclick="window.location.href='/animals'" class="feature-card cursor-pointer">
-                <div class="flex flex-col items-center text-center">
-                    <div class="bg-linear-to-br from-orange-500 to-orange-600 p-6 rounded-2xl mb-4 shadow-lg">
-                        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <circle cx="8" cy="8" r="2"/>
-                            <circle cx="16" cy="8" r="2"/>
-                            <path d="M12 14c-2 0-4 1.5-4 4s2 4 4 4 4-2 4-4-2-4-4-4z"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2" data-i18n="home.featAnimals">Livestock Trading</h3>
-                    <p class="text-gray-600" data-i18n="home.featAnimalsSub">Buy and sell animals</p>
+            <div onclick="window.location.href='/animals'" class="portal-card h-80 rounded-3xl relative overflow-hidden cursor-pointer bg-gray-900 group shadow-2xl animate-slide-up" style="animation-delay: 0.5s;">
+                <img src="https://images.unsplash.com/photo-1546445317-29f4545e9d53?auto=format&fit=crop&q=80&w=600" class="absolute inset-0 w-full h-full object-cover opacity-80" alt="Cow">
+                <div class="absolute inset-0 bg-gradient-to-t from-orange-900/90 via-transparent to-transparent"></div>
+                <div class="absolute bottom-0 left-0 p-8">
+                    <h3 class="text-3xl font-bold text-white mb-1" data-i18n="home.featAnimals">Livestock</h3>
+                    <p class="text-orange-300 font-semibold text-sm uppercase tracking-wider">Buy & Sell</p>
                 </div>
             </div>
 
-            <!-- Sell Crops -->
-            <div onclick="window.location.href='/crops'" class="feature-card cursor-pointer">
-                <div class="flex flex-col items-center text-center">
-                    <div class="bg-linear-to-br from-yellow-500 to-yellow-600 p-6 rounded-2xl mb-4 shadow-lg">
-                        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2" data-i18n="home.featCrops">Sell Your Crops</h3>
-                    <p class="text-gray-600" data-i18n="home.featCropsSub">Find buyers directly</p>
+            <div onclick="window.location.href='/crops'" class="portal-card h-80 rounded-3xl relative overflow-hidden cursor-pointer bg-gray-900 group shadow-2xl animate-slide-up" style="animation-delay: 0.6s;">
+                <img src="https://plus.unsplash.com/premium_photo-1664301486196-6517faf72dec?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8c2VlZHMlMjB0cmFkZXxlbnwwfHwwfHx8MA%3D%3D" class="absolute inset-0 w-full h-full object-cover opacity-80" alt="Wheat">
+                <div class="absolute inset-0 bg-gradient-to-t from-yellow-900/90 via-transparent to-transparent"></div>
+                <div class="absolute bottom-0 left-0 p-8">
+                    <h3 class="text-3xl font-bold text-white mb-1" data-i18n="home.featCrops">Sell Crops</h3>
+                    <p class="text-yellow-300 font-semibold text-sm uppercase tracking-wider">Marketplace</p>
                 </div>
             </div>
 
-            <!-- Vet Support -->
-            <div onclick="window.location.href='/teleVet'" class="feature-card cursor-pointer">
-                <div class="flex flex-col items-center text-center">
-                    <div class="bg-linear-to-br from-red-500 to-red-600 p-6 rounded-2xl mb-4 shadow-lg">
-                        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2" data-i18n="home.featVet">Vet Support</h3>
-                    <p class="text-gray-600" data-i18n="home.featVetSub">Video call doctors</p>
+            <div onclick="window.location.href='/teleVet'" class="portal-card h-80 rounded-3xl relative overflow-hidden cursor-pointer bg-gray-900 group shadow-2xl animate-slide-up" style="animation-delay: 0.7s;">
+                <img src="https://media.istockphoto.com/id/844394412/photo/group-of-veterinary-students-in-an-anatomy-class.webp?a=1&b=1&s=612x612&w=0&k=20&c=OoG_J-Ifone4lspz2dHzvD_0ZRR9Dtk-hM5UPGmz85M=" class="absolute inset-0 w-full h-full object-cover opacity-80" alt="Vet">
+                <div class="absolute inset-0 bg-gradient-to-t from-red-900/90 via-transparent to-transparent"></div>
+                <div class="absolute bottom-0 left-0 p-8">
+                    <h3 class="text-3xl font-bold text-white mb-1" data-i18n="home.featVet">Vet Call</h3>
+                    <p class="text-red-300 font-semibold text-sm uppercase tracking-wider">Video Consult</p>
                 </div>
             </div>
 
-            <!-- Find Stock -->
-            <div onclick="window.location.href='/stock'" class="feature-card cursor-pointer">
-                <div class="flex flex-col items-center text-center">
-                    <div class="bg-linear-to-br from-teal-500 to-teal-600 p-6 rounded-2xl mb-4 shadow-lg">
-                        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2" data-i18n="home.featStock">Find Stock</h3>
-                    <p class="text-gray-600" data-i18n="home.featStockSub">Seeds, fertilizers</p>
-                </div>
-            </div>
-
-            <!-- Weather Updates - NOW WORKING! -->
-            <div onclick="window.location.href='/weather'" class="feature-card cursor-pointer">
-                <div class="flex flex-col items-center text-center">
-                    <div class="bg-linear-to-br from-cyan-500 to-cyan-600 p-6 rounded-2xl mb-4 shadow-lg">
-                        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2" data-i18n="home.featWeather">Weather Updates</h3>
-                    <p class="text-gray-600" data-i18n="home.featWeatherSub">Live Forecast</p>
+            <div onclick="window.location.href='/stock'" class="portal-card h-80 rounded-3xl relative overflow-hidden cursor-pointer bg-gray-900 group shadow-2xl animate-slide-up" style="animation-delay: 0.8s;">
+                <img src="https://plus.unsplash.com/premium_photo-1742482666813-82d3db55f2bd?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c3RvY2slMjByaXNlfGVufDB8fDB8fHww" class="absolute inset-0 w-full h-full object-cover opacity-80" alt="Seeds">
+                <div class="absolute inset-0 bg-gradient-to-t from-teal-900/90 via-transparent to-transparent"></div>
+                <div class="absolute bottom-0 left-0 p-8">
+                    <h3 class="text-3xl font-bold text-white mb-1" data-i18n="home.featStock">Inventory</h3>
+                    <p class="text-teal-300 font-semibold text-sm uppercase tracking-wider">Seeds & Tools</p>
                 </div>
             </div>
 
         </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="py-20 px-4 bg-linear-to-r from-green-600 to-green-700 text-white">
-        <div class="max-w-4xl mx-auto text-center">
-            <h2 class="text-4xl md:text-5xl font-bold mb-6" data-i18n="home.ctaTitle">
-                Ready to Transform Your Farming?
-            </h2>
-            <p class="text-xl mb-10 text-green-100" data-i18n="home.ctaSubtitle">
-                Join thousands of farmers using Aarohi Agriculture
-            </p>
-            <button id="ctaButton" class="btn-primary text-xl" type="button">
-                Get Started Free
-            </button>
-        </div>
-    </section>
-
-    <!-- Footer -->
     <%- include("../layouts/footer") %>
 
-    <!-- Voice Command Script -->
     <script>
     function startVoiceCommand() {
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -220,6 +199,5 @@
         }
     }
     </script>
-
 </body>
 </html>

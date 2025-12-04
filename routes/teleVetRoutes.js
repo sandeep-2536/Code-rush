@@ -70,15 +70,19 @@ router.post("/call/initiate/:vetId", isFarmerAuth, async (req, res) => {
     const { vetId } = req.params;
     const farmerId = req.session.user._id;
 
+    console.log('[TeleVet] Call initiate request - farmerId:', farmerId, 'vetId:', vetId);
+
     // Check if vet exists
     const vet = await Vet.findById(vetId);
     if (!vet) {
+      console.log('[TeleVet] Vet not found:', vetId);
       return res.status(404).json({ success: false, message: "Vet not found" });
     }
 
     // Check if farmer exists
     const farmer = await User.findById(farmerId);
     if (!farmer) {
+      console.log('[TeleVet] Farmer not found:', farmerId);
       return res.status(404).json({ success: false, message: "Farmer not found" });
     }
 
@@ -92,6 +96,8 @@ router.post("/call/initiate/:vetId", isFarmerAuth, async (req, res) => {
       vetId,
       status: "pending"
     });
+
+    console.log('[TeleVet] VideoCall created:', videoCall._id, 'roomId:', roomId);
 
     // Populate farmer data for notification
     const populatedCall = await VideoCall.findById(videoCall._id)
@@ -115,6 +121,8 @@ router.post("/call/initiate/:vetId", isFarmerAuth, async (req, res) => {
       } else {
         console.log(`[TeleVet] Vet ${vetId} not connected to socket`);
       }
+    } else {
+      console.warn('[TeleVet] io or userSocketMap not initialized');
     }
 
     res.json({
@@ -124,8 +132,8 @@ router.post("/call/initiate/:vetId", isFarmerAuth, async (req, res) => {
       vetName: vet.name
     });
   } catch (error) {
-    console.error("Error initiating call:", error);
-    res.status(500).json({ success: false, message: "Failed to initiate call" });
+    console.error("[TeleVet] Error initiating call:", error.message, error.stack);
+    res.status(500).json({ success: false, message: "Failed to initiate call", error: error.message });
   }
 });
 
