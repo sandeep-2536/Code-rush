@@ -26,17 +26,32 @@ exports.analyze = async (req, res) => {
             return res.status(400).json({ reply: "Please speak something, I am listening 👂" });
         }
 
-        if (!process.env.GEMINI_API_KEY) {
-            return res.status(500).json({ reply: "API key missing. Set GEMINI_API_KEY first." });
+        // Check for API key early with clear error
+        if (!process.env.GEMINI_API_KEY && !process.env.AI_API_KEY) {
+            console.error('[AI] GEMINI_API_KEY and AI_API_KEY both missing from environment');
+            return res.status(503).json({ 
+                reply: "🔧 AI service is not configured. Please contact administrator. (Missing API key)" 
+            });
         }
+
+        const apiKey = process.env.GEMINI_API_KEY || process.env.AI_API_KEY;
+        const modelName = process.env.GEMINI_MODEL || "gemini-2.5-pro";
 
         // ----------------- Initialize Model Once -----------------
         if (!cachedModel) {
-            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-            cachedModel = genAI.getGenerativeModel({
-                model: process.env.GEMINI_MODEL || "gemini-2.5-flash",  // FIXED HERE
-                systemInstruction: SYSTEM_INSTRUCTION
-            });
+            try {
+                const genAI = new GoogleGenerativeAI(apiKey);
+                cachedModel = genAI.getGenerativeModel({
+                    model: modelName,
+                    systemInstruction: SYSTEM_INSTRUCTION
+                });
+                console.log('[AI] Model initialized:', modelName);
+            } catch (initErr) {
+                console.error('[AI] Model init error:', initErr.message);
+                return res.status(503).json({ 
+                    reply: "🔧 AI service initialization failed. Please try again later." 
+                });
+            }
         }
 
         // ----------------- Chat Session (context memory optional) -----------------
@@ -58,9 +73,19 @@ exports.analyze = async (req, res) => {
         return res.json({ reply: responseText });
 
     } catch (error) {
-        console.error("AI ERROR:", error);
-        return res.status(500).json({
-            reply: "Sorry! I am having trouble thinking right now. Try again in few seconds 🙏"
-        });
+        console.error("[AI] Error:", error.message);
+        
+        // Provide specific error messages based on error type
+        let userMessage = "Sorry! I am having trouble thinking right now. Try again in few seconds 🙏";
+        
+        if (error.message.includes('quota') || error.message.includes('RESOURCE_EXHAUSTED')) {
+            userMessage = "🚜 I'm overwhelmed with requests. Please try again in a moment.";
+        } else if (error.message.includes('API key') || error.message.includes('authentication')) {
+            userMessage = "🔧 AI service configuration error. Please contact support.";
+        } else if (error.message.includes('Network')) {
+            userMessage = "🌐 Network connection error. Please check your internet.";
+        }
+        
+        return res.status(500).json({ reply: userMessage });
     }
 };

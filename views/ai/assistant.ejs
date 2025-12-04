@@ -152,20 +152,30 @@
     // Check for voice query from localStorage (if redirected from another page)
     window.addEventListener('DOMContentLoaded', function() {
         const voiceQuery = localStorage.getItem('voiceQuery');
-        if (voiceQuery) {
-            document.getElementById('userInput').value = voiceQuery;
+        const userInput = document.getElementById('userInput');
+        if (voiceQuery && userInput) {
+            userInput.value = voiceQuery;
             localStorage.removeItem('voiceQuery');
             sendMessage();
         }
     });
 
     function askQuestion(question) {
-        document.getElementById('userInput').value = question;
+        const input = document.getElementById('userInput');
+        if (!input) {
+            console.error('userInput element not found');
+            return;
+        }
+        input.value = question;
         sendMessage();
     }
 
     async function sendMessage() {
         const input = document.getElementById('userInput');
+        if (!input) {
+            console.error('userInput element not found');
+            return;
+        }
         const message = input.value.trim();
         if (!message) return;
 
@@ -186,7 +196,10 @@
                 body: JSON.stringify({ message: message })
             });
 
-            if (!response.ok) throw new Error('Network error');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.reply || 'Network error');
+            }
 
             const data = await response.json();
 
@@ -203,6 +216,10 @@
 
     function addMessage(text, type) {
         const chatMessages = document.getElementById('chatMessages');
+        if (!chatMessages) {
+            console.error('chatMessages element not found');
+            return;
+        }
         const messageDiv = document.createElement('div');
         messageDiv.className = type === 'user' ? 'user-message' : 'ai-message';
 
@@ -286,6 +303,11 @@
             
             // Visual feedback that it's listening
             const inputField = document.getElementById('userInput');
+            if (!inputField) {
+                console.error('userInput element not found');
+                alert('Error: Input field not found');
+                return;
+            }
             const originalPlaceholder = inputField.placeholder;
             inputField.placeholder = "Listening... 🎙️";
             
