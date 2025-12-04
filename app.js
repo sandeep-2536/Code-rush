@@ -6,6 +6,7 @@ const http = require("http").createServer(app);
 const io = require("socket.io")(http);
 const i18n = require("i18n"); // Included from the second block for i18n
 const port = process.env.PORT || 3000;
+const { initializeCronJobs } = require('./config/cronJobs');
 const cookieParser = require("cookie-parser");
 
 const session = require("express-session");
@@ -13,6 +14,9 @@ const connectDB = require("./config/db");
 
 // ✨ Connect to MongoDB
 connectDB();
+
+// --- Initialize Cron Jobs ---
+initializeCronJobs();
 
 // --- Middlewares ---
 app.use(express.json());
