@@ -2,10 +2,8 @@
 (function () {
   const socket = io();
 
-  // Read configuration rendered into the DOM by EJS (no inline script values)
   const cfgEl = document.getElementById('teleVetConfig');
   const cfg = cfgEl ? cfgEl.dataset : {};
-  const role = cfg.role || 'farmer';
   const farmerId = cfg.farmerId || '';
   const farmerName = cfg.farmerName || '';
   const vetId = cfg.vetId || '';
@@ -23,7 +21,6 @@
   let pc = null;
   let isMuted = false;
   let cameraOff = false;
-  let isConnected = false;
 
   const rtcConfig = {
     iceServers: [
@@ -32,13 +29,14 @@
     ]
   };
 
-  console.log('[teleVetFarmerCall] initialized with config:', { role, farmerId, vetId, roomId, farmerName, vetName });
+  console.log('[teleVetFarmerCall] initialized:', { farmerId, vetId, roomId });
 
-  if (farmerId) {
-    socket.emit("register", farmerId);
-  } else {
-    console.warn('[teleVetFarmerCall] no farmerId found in DOM config');
-  }
+  // Register farmer
+  socket.emit("register", farmerId);
+
+  socket.on('registered', (data) => {
+    console.log('[teleVetFarmerCall] registered:', data);
+  });
 
   function createPeerConnection() {
     console.log('[teleVetFarmerCall] creating peer connection');
@@ -52,17 +50,15 @@
     }
 
     pc.ontrack = (event) => {
-      console.log('[teleVetFarmerCall] ontrack event received', event.streams);
+      console.log('[teleVetFarmerCall] ontrack event:', event.streams.length);
       if (event.streams && event.streams[0]) {
         remoteVideo.srcObject = event.streams[0];
         statusEl.innerText = "Connected ✓";
-        isConnected = true;
       }
     };
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log('[teleVetFarmerCall] sending ice candidate');
         socket.emit("iceCandidate", { roomId, candidate: event.candidate });
       }
     };
@@ -70,92 +66,83 @@
     pc.onconnectionstatechange = () => {
       console.log('[teleVetFarmerCall] connection state:', pc.connectionState);
       if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-        statusEl.innerText = 'Connection lost. Attempting to reconnect...';
+        statusEl.innerText = 'Connection lost...';
       }
-    };
-
-    pc.oniceconnectionstatechange = () => {
-      console.log('[teleVetFarmerCall] ice connection state:', pc.iceConnectionState);
     };
   }
 
   async function start() {
     try {
-      console.log('[teleVetFarmerCall] requesting media devices');
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      console.log('[teleVetFarmerCall] requesting media');
+      localStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } }, 
+        audio: true 
+      });
       localVideo.srcObject = localStream;
-      console.log('[teleVetFarmerCall] local stream obtained');
+      console.log('[teleVetFarmerCall] media obtained');
 
       createPeerConnection();
 
-      // tell server we want to call this vet
+      // Call vet
       socket.emit("callUser", {
         toUserId: vetId,
         roomId,
         fromUserId: farmerId,
-        fromName: farmerName
+        fromName: farmerName,
+        type: 'teleVet'
       });
 
       statusEl.innerText = "Calling doctor...";
+      console.log('[teleVetFarmerCall] call initiated');
     } catch (err) {
-      console.error('[teleVetFarmerCall] getUserMedia error', err);
+      console.error('[teleVetFarmerCall] error:', err);
       statusEl.innerText = "Camera/mic permission denied";
-      alert("Camera/mic permission is required. Please allow access and reload.");
+      alert("Please allow camera and microphone access and reload the page.");
     }
   }
 
-  // doctor accepted
   socket.on("callAccepted", ({ roomId: acceptedRoom }) => {
-    console.log('[teleVetFarmerCall] doctor accepted, joining room:', acceptedRoom);
-    if (acceptedRoom !== roomId) return;
+    console.log('[teleVetFarmerCall] call accepted');
     statusEl.innerText = "Doctor accepted. Connecting video...";
     socket.emit("joinRoom", roomId);
   });
 
-  // doctor rejected
   socket.on("callRejected", () => {
-    console.log('[teleVetFarmerCall] doctor rejected the call');
+    console.log('[teleVetFarmerCall] call rejected');
     statusEl.innerText = "Doctor rejected the call.";
   });
 
-  // doctor unavailable
-  socket.on("noAnswer", ({ toUserId }) => {
-    console.log('[teleVetFarmerCall] doctor not available');
-    if (toUserId === vetId) {
-      statusEl.innerText = "Doctor is not available.";
-    }
+  socket.on("noAnswer", () => {
+    console.log('[teleVetFarmerCall] doctor offline');
+    statusEl.innerText = "Doctor is not available.";
   });
 
-  // When vet joins room, send offer to them
   socket.on("ready", async () => {
-    console.log('[teleVetFarmerCall] doctor ready - creating offer');
+    console.log('[teleVetFarmerCall] doctor ready, creating offer');
     if (!pc) {
-      console.log('[teleVetFarmerCall] peer connection not ready, waiting...');
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise(r => setTimeout(r, 500));
     }
-
     try {
-      statusEl.innerText = "Setting up video connection...";
-      const offer = await pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
+      const offer = await pc.createOffer({ 
+        offerToReceiveVideo: true, 
+        offerToReceiveAudio: true 
+      });
       await pc.setLocalDescription(offer);
       socket.emit("offer", { roomId, offer });
       console.log('[teleVetFarmerCall] offer sent');
     } catch (err) {
-      console.error('[teleVetFarmerCall] offer creation failed', err);
+      console.error('[teleVetFarmerCall] offer error:', err);
     }
   });
 
   socket.on("answer", async (answer) => {
-    console.log('[teleVetFarmerCall] received answer');
+    console.log('[teleVetFarmerCall] answer received');
     try {
-      if (!pc) {
-        console.warn('[teleVetFarmerCall] peer connection not ready when receiving answer');
-        return;
-      }
+      if (!pc) return;
       await pc.setRemoteDescription(new RTCSessionDescription(answer));
-      console.log('[teleVetFarmerCall] answer set successfully');
+      console.log('[teleVetFarmerCall] answer set');
     } catch (err) {
-      console.error('[teleVetFarmerCall] answer handling error', err);
+      console.error('[teleVetFarmerCall] answer error:', err);
     }
   });
 
@@ -165,13 +152,21 @@
         await pc.addIceCandidate(new RTCIceCandidate(candidate));
       }
     } catch (err) {
-      console.error('[teleVetFarmerCall] Error adding ICE candidate', err);
+      console.error('[teleVetFarmerCall] ICE error:', err);
     }
   });
 
+  socket.on("callEnded", () => {
+    console.log('[teleVetFarmerCall] call ended by doctor');
+    statusEl.innerText = "Doctor ended the call.";
+    cleanup();
+  });
+
   endCallBtn.addEventListener("click", () => {
+    console.log('[teleVetFarmerCall] farmer ending call');
+    socket.emit("endCall", { roomId, userId: farmerId });
     statusEl.innerText = "Call ended.";
-    cleanupAndBack();
+    cleanup();
   });
 
   muteBtn.addEventListener("click", () => {
@@ -190,7 +185,7 @@
     cameraBtn.innerText = cameraOff ? "Camera On" : "Camera Off";
   });
 
-  function cleanupAndBack() {
+  function cleanup() {
     if (pc) {
       pc.close();
       pc = null;
@@ -201,9 +196,8 @@
     }
     setTimeout(() => {
       window.location.href = "/teleVet";
-    }, 1000);
+    }, 1500);
   }
 
-  // start everything
   start();
 })();
