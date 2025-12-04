@@ -160,12 +160,24 @@ io.on("connection", (socket) => {
 
     socket.on("joinRoom", (roomId) => {
         try {
-            socket.join(roomId);
-            const room = io.sockets.adapter.rooms.get(roomId);
+            // support both payload styles: `joinRoom(roomId)` and `joinRoom({ roomId })`
+            let resolvedRoomId = roomId;
+            if (typeof roomId === 'object' && roomId !== null) {
+                resolvedRoomId = roomId.roomId || roomId.room || undefined;
+            }
+
+            if (!resolvedRoomId) {
+                console.warn('[socket] joinRoom called without roomId', roomId);
+                return;
+            }
+
+            socket.join(resolvedRoomId);
+            const room = io.sockets.adapter.rooms.get(resolvedRoomId);
             const members = room ? Array.from(room) : [];
-            console.log('[socket] joinRoom', { roomId, socketId: socket.id, members });
-            socket.to(roomId).emit("ready");
-            console.log('[socket] ready emitted to room', roomId);
+            console.log('[socket] joinRoom', { roomId: resolvedRoomId, socketId: socket.id, members });
+            // notify other members in the room that someone joined and is ready
+            socket.to(resolvedRoomId).emit("ready");
+            console.log('[socket] ready emitted to room', resolvedRoomId);
         } catch (e) {
             console.warn('[socket] joinRoom error', e);
         }
@@ -205,14 +217,7 @@ io.on("connection", (socket) => {
     const Message = require('./models/Message');
     const User = require('./models/User');
 
-    socket.on('joinRoom', async ({ roomId }) => {
-        try {
-            socket.join(roomId);
-            console.log('[socket] joined chat room', roomId);
-        } catch (e) {
-            console.warn('[socket] joinRoom error', e);
-        }
-    });
+    // NOTE: joinRoom handling is consolidated above to support both chat and video uses.
 
     socket.on('sendMessage', async (payload) => {
         try {
@@ -263,7 +268,7 @@ io.on("connection", (socket) => {
 
     socket.on('updateMessage', async (payload) => {
         try {
-            const updated = await Message.findByIdAndUpdate(msgId._id, {
+            const updated = await Message.findByIdAndUpdate(payload._id, {
                 text: payload.text,
                 edited: true
             }, { new: true }).populate('user');
