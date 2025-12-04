@@ -1,140 +1,167 @@
-const Post = require("../models/Post");
-const Comment = require("../models/Comment");
-const User = require("../models/User");
 const axios = require('axios');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const User = require('../models/User');
+const Post = require('../models/Post'); 
+// ... Import other models (Animal, Crop, Problem, etc.)
+
+require('dotenv').config();
+
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.AI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
 
 exports.getDashboard = async (req, res) => {
-    if (!req.session.user) return res.redirect("/auth/login");
-
-    const userId = req.session.user._id;
-
     try {
-        // Fetch community posts by this user
-        const myCommunityPosts = await Post.find({ user: userId })
-            .sort({ createdAt: -1 })
-            .limit(100);
-
-        // Fetch comments by this user
-        const myComments = await Comment.find({ user: userId })
-            .sort({ createdAt: -1 })
-            .limit(100);
-
-        // Fetch problems (using Post model — filter by type if needed)
-        const myProblems = await Post.find({ user: userId })
-            .sort({ createdAt: -1 })
-            .limit(100);
-
-        // Fetch animals (stub — returns empty if model doesn't exist or user field not set)
-        let myAnimals = [];
-        try {
-            const Animal = require("../models/Animal");
-            myAnimals = await Animal.find({ user: userId }).limit(100);
-        } catch (e) {
-            console.warn('[dashboard] Animal model not available or error:', e.message);
+        if (!req.session.user) return res.redirect("/auth/login");
+        const userId = (req.session.user && req.session.user._id) || null;
+        
+        // Prefer fresh DB copy when possible, fall back to session user object
+        let user = req.session.user;
+        if (userId) {
+            try {
+                const dbUser = await User.findById(userId);
+                if (dbUser) user = dbUser;
+            } catch (e) {
+                console.warn('[dashboard] could not load user from DB, using session user');
+            }
         }
 
-        // Fetch crops (stub — returns empty if model doesn't exist or user field not set)
-        let myCrops = [];
-        try {
-            const Crop = require("../models/Crop");
-            myCrops = await Crop.find({ user: userId }).limit(100);
-        } catch (e) {
-            console.warn('[dashboard] Crop model not available or error:', e.message);
-        }
-
-        // Vet calls (stub — returns empty)
-        const myVetCalls = [];
-
-        // AI searches (stub — returns empty)
-        const myAISearches = [];
-
-        // Stock views (stub — returns empty)
+        // ==========================================
+        // 1. YOUR EXISTING DATA LOGIC
+        // ==========================================
+        const myCommunityPosts = await Post.find({ author: userId }); 
+        const myComments = []; // Replace with actual query
+        const myProblems = []; // Replace with actual query
+        const myAnimals = [];  // Replace with actual query
+        const myCrops = [];    // Replace with actual query
+        const myVetCalls = []; // Replace with actual query
+        const myAISearches = []; 
         const myStockViews = [];
+        const recentActivity = []; 
 
-        // Recent activity (mix of posts and comments, sorted by date)
-        const recentActivity = []
-            .concat(myCommunityPosts.map(p => ({
-                type: p.type || 'post',
-                text: p.title || 'Posted in community',
-                date: p.createdAt
-            })))
-            .concat(myComments.map(c => ({
-                type: 'comment',
-                text: 'Added a comment',
-                date: c.createdAt
-            })))
-            .concat(myProblems.map(p => ({
-                type: 'problem',
-                text: p.title || 'Reported a problem',
-                date: p.createdAt
-            })))
-            .sort((a, b) => new Date(b.date) - new Date(a.date))
-            .slice(0, 10);
+        // ==========================================
+        // 2. WEATHER & AI LOGIC (FIXED)
+        // ==========================================
+        let weatherData = null;
+        let aiAdvice = "Currently, no advice is available. Please update your location.";
 
-        // Try to fetch simple current weather for user's location (if available)
-        let weather = [];
-        let locationForWeather = '';
-        try {
-            const apiKey = process.env.OPENWEATHERMAP_API_KEY;
-            // Try to use village, city or state as a simple query
-            locationForWeather = (req.session.user && (req.session.user.village || req.session.user.city || req.session.user.state)) || process.env.DEFAULT_WEATHER_CITY || '';
-            if (apiKey && locationForWeather) {
-                // Fetch 5-day forecast for better weather data
-                const weatherRes = await axios.get('https://api.openweathermap.org/data/2.5/forecast', {
-                    params: {
-                        q: locationForWeather,
-                        units: 'metric',
-                        appid: apiKey
-                    }
-                });
-                const list = weatherRes.data && weatherRes.data.list ? weatherRes.data.list : [];
+        // Location fallback chain
+        const locationQuery = (user && (user.village || user.city || user.district || user.state)) || process.env.DEFAULT_WEATHER_CITY || "Delhi";
+
+        // Get API key
+        const apiKey = process.env.WEATHER_API_KEY || process.env.OPENWEATHERMAP_API_KEY;
+        console.log('[dashboard] locationQuery=', locationQuery, 'apiKeyPresent=', !!apiKey);
+
+        if (locationQuery && apiKey) {
+            try {
+                // A. Fetch Weather from OpenWeatherMap
+                const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(locationQuery)}&units=metric&appid=${apiKey}`;
+                console.log('[dashboard] Fetching weather from:', weatherUrl);
                 
-                // Extract one reading per day at 12:00 PM (noon) for next 5 days
-                weather = list
+                const response = await axios.get(weatherUrl);
+                const list = response.data && response.data.list ? response.data.list : null;
+                
+                if (!list || list.length === 0) {
+                    throw new Error('Invalid weather response - empty list');
+                }
+
+                // B. Simplify Data (Take 1 reading per day at 12:00 PM)
+                weatherData = list
                     .filter(reading => reading.dt_txt.includes("12:00:00"))
                     .slice(0, 5)
                     .map(day => ({
                         date: new Date(day.dt_txt).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
-                        icon: (day.weather && day.weather[0] && day.weather[0].icon) || '01d',
-                        temp: Math.round(day.main && day.main.temp) || '',
-                        desc: (day.weather && day.weather[0] && day.weather[0].main) || 'Clear'
+                        temp: Math.round(day.main.temp),
+                        icon: day.weather[0].icon,
+                        desc: day.weather[0].main
                     }));
-            }
-        } catch (e) {
-            console.warn('[dashboard] weather fetch failed for location:', locationForWeather, 'Error:', e.message);
-            
-            // If 404, try fallback to state
-            if (e.response && e.response.status === 404 && req.session.user && req.session.user.state) {
-                console.log('[dashboard] Location not found, trying state:', req.session.user.state);
-                try {
-                    const fallbackRes = await axios.get('https://api.openweathermap.org/data/2.5/forecast', {
-                        params: {
-                            q: req.session.user.state,
-                            units: 'metric',
-                            appid: process.env.OPENWEATHERMAP_API_KEY
-                        }
-                    });
-                    const fallbackList = fallbackRes.data && fallbackRes.data.list ? fallbackRes.data.list : [];
-                    weather = fallbackList
-                        .filter(reading => reading.dt_txt.includes("12:00:00"))
-                        .slice(0, 5)
-                        .map(day => ({
-                            date: new Date(day.dt_txt).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
-                            icon: (day.weather && day.weather[0] && day.weather[0].icon) || '01d',
-                            temp: Math.round(day.main && day.main.temp) || '',
-                            desc: (day.weather && day.weather[0] && day.weather[0].main) || 'Clear'
-                        }));
-                } catch (fallbackErr) {
-                    console.warn('[dashboard] fallback weather also failed:', fallbackErr.message);
-                    weather = [];
+
+                console.log('[dashboard] Weather data processed:', weatherData.length, 'days');
+
+                // C. Ask AI for Advice
+                if (process.env.AI_API_KEY) {
+                    try {
+                        const prompt = `
+                            I am a farmer in ${locationQuery}. 
+                            The weather forecast for the next 5 days is: ${JSON.stringify(weatherData)}.
+                            
+                            Based strictly on this weather, provide:
+                            1. A 1-sentence warning or green flag.
+                            2. A bullet list (<ul><li>) of 3 actionable tasks (e.g., "Irrigate tomorrow", "Spray fungicide").
+                            
+                            Format the response as raw HTML without markdown code blocks.
+                        `;
+                        
+                        const aiResult = await model.generateContent(prompt);
+                        aiAdvice = aiResult.response.text();
+                        console.log('[dashboard] AI advice generated successfully');
+                    } catch (aiErr) {
+                        console.error('[dashboard] AI generation failed:', aiErr.message);
+                        aiAdvice = `Weather: ${weatherData[0].desc}, ${weatherData[0].temp}°C. Check forecast for field planning.`;
+                    }
+                } else {
+                    aiAdvice = `Weather: ${weatherData[0].desc}, ${weatherData[0].temp}°C. AI API key not configured.`;
                 }
+
+            } catch (err) {
+                console.error("[dashboard] Weather/AI Error:", err.message);
+                
+                // Check if it's a 404 (location not found)
+                if (err.response && err.response.status === 404) {
+                    console.warn('[dashboard] Location not found:', locationQuery);
+                    
+                    // Try fallback to state
+                    const fallbackLocation = user && user.state ? user.state : process.env.DEFAULT_WEATHER_CITY || 'Delhi';
+                    console.log('[dashboard] Trying fallback location:', fallbackLocation);
+                    
+                    try {
+                        const fallbackRes = await axios.get(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(fallbackLocation)}&units=metric&appid=${apiKey}`);
+                        const fallbackList = fallbackRes.data && fallbackRes.data.list ? fallbackRes.data.list : [];
+                        
+                        weatherData = fallbackList
+                            .filter(reading => reading.dt_txt.includes("12:00:00"))
+                            .slice(0, 5)
+                            .map(day => ({
+                                date: new Date(day.dt_txt).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
+                                temp: Math.round(day.main.temp),
+                                icon: day.weather[0].icon,
+                                desc: day.weather[0].main
+                            }));
+                        
+                        aiAdvice = `Weather data for ${fallbackLocation} region. Please enter a valid village/city name in your profile for more accurate forecasts.`;
+                        console.log('[dashboard] Fallback weather loaded successfully');
+                    } catch (fallbackErr) {
+                        console.error('[dashboard] Fallback location also failed:', fallbackErr.message);
+                        aiAdvice = `Could not fetch weather for "${locationQuery}". Please check the village/city name in your profile.`;
+                    }
+                } else {
+                    // Other API errors
+                    aiAdvice = "Could not fetch weather advice at this moment. Please try again later.";
+                }
+            }
+        } else {
+            if (!apiKey) {
+                console.warn('[dashboard] API key missing (WEATHER_API_KEY or OPENWEATHERMAP_API_KEY)');
+                aiAdvice = "Weather service not configured on server. Please contact administrator.";
             } else {
-                weather = [];
+                aiAdvice = "Location not set. Update your profile with a village or state to get weather-based advice.";
             }
         }
 
-        res.render("dashboard/dashboard", {
-            user: req.session.user,
+        // ==========================================
+        // 3. RENDER THE DASHBOARD
+        // ==========================================
+        console.log('[dashboard] Rendering with weather:', !!weatherData, 'advice:', !!aiAdvice);
+        
+        res.render('dashboard/dashboard', {
+            // User Data
+            user: user,
+            
+            // Weather Feature Data
+            weather: weatherData,
+            aiAdvice: aiAdvice,
+
+            // Existing Feature Data
             myCommunityPosts,
             myComments,
             myProblems,
@@ -143,58 +170,44 @@ exports.getDashboard = async (req, res) => {
             myVetCalls,
             myAISearches,
             myStockViews,
-            recentActivity,
-            weather,
-            aiAdvice: ''
+            recentActivity
         });
-    } catch (err) {
-        console.error('[dashboard] error:', err);
-        res.status(500).render('dashboard/dashboard', {
-            user: req.session.user,
-            myCommunityPosts: [],
-            myComments: [],
-            myProblems: [],
-            myAnimals: [],
-            myCrops: [],
-            myVetCalls: [],
-            myAISearches: [],
-            myStockViews: [],
-            recentActivity: [],
-            error: 'Error loading dashboard data'
-            , weather: [],
-            aiAdvice: ''
-        });
+
+    } catch (error) {
+        console.error("[dashboard] Controller Error:", error);
+        res.status(500).send("Server Error: " + error.message);
     }
 };
 
-// Save user's location (village, state) to database
+// NEW: Save Location Endpoint (called from dashboard modal)
 exports.saveLocation = async (req, res) => {
     try {
-        if (!req.session.user) return res.status(401).json({ success: false, message: 'Not authenticated' });
-        
         const { village, state } = req.body;
-        if (!village || !state) {
-            return res.status(400).json({ success: false, message: 'Village and state are required' });
+        const userId = req.session.user?._id;
+        
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'Not authenticated' });
         }
 
-        const userId = req.session.user._id;
+        // Update user in database
         const updatedUser = await User.findByIdAndUpdate(
             userId,
             { village, state },
             { new: true }
         );
 
-        // Update session user as well
-        req.session.user.village = updatedUser.village;
-        req.session.user.state = updatedUser.state;
+        // Update session
+        req.session.user = updatedUser;
 
+        console.log('[dashboard] Location saved:', { village, state });
+        
         res.json({ 
             success: true, 
             message: 'Location saved successfully',
-            user: updatedUser 
+            user: { village: updatedUser.village, state: updatedUser.state }
         });
-    } catch (err) {
-        console.error('[dashboard] saveLocation error:', err);
-        res.status(500).json({ success: false, message: 'Failed to save location' });
+    } catch (error) {
+        console.error('[dashboard] Save location error:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };

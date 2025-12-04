@@ -101,28 +101,7 @@
 <div id="currentVetData" style="display:none;" data-vet-id="<%= vet._id %>" data-vet-name="<%= vet.name %>"></div>
 <% } %>
 
-<div class="fixed bottom-4 right-4 bg-white p-3 rounded-xl shadow-xl w-44 text-sm z-50">
-  <button onclick="toggleVoice()" class="w-full p-2 rounded bg-green-600 text-white mb-2">
-    🔊 <span data-i18n="voice.voice_label">Voice</span>: <span id="voiceState" data-i18n="voice.on">On</span>
-  </button>
 
-  <label class="block mb-1" data-i18n="voice.language">Language</label>
-  <select id="voiceLang" class="w-full p-1 mb-2 border rounded" onchange="changeLanguage(this.value)">
-    <option value="en">English</option>
-    <option value="hi">हिन्दी</option>
-    <option value="kn">ಕನ್ನಡ</option>
-  </select>
-
-  <label data-i18n="voice.speed">Speed</label>
-  <input type="range" min="0.7" max="1.4" step="0.1" id="voiceRate" class="w-full">
-
-    <label class="block mt-2 mb-1" data-i18n="voice.select_voice">Select Voice</label>
-    <select id="voiceSelect" class="w-full p-1 mb-2 border rounded"></select>
-    <div class="flex gap-2">
-        <button id="saveVoiceBtn" class="flex-1 p-1 rounded bg-blue-600 text-white">Save</button>
-        <button id="testVoiceBtn" class="flex-1 p-1 rounded bg-gray-200">Test</button>
-    </div>
-</div>
 
 <script src="/socket.io/socket.io.js"></script>
 

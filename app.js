@@ -8,7 +8,6 @@ const i18n = require("i18n"); // Included from the second block for i18n
 const port = process.env.PORT || 3000;
 const { initializeCronJobs } = require('./config/cronJobs');
 const cookieParser = require("cookie-parser");
-
 const session = require("express-session");
 const connectDB = require("./config/db");
 
