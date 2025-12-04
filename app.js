@@ -75,7 +75,7 @@ const dealerAuthRoutes = require('./routes/dealerAuthRoutes');
 const stockRoutes = require('./routes/stockRoutes');
 const i18nRoutes = require('./routes/i18nRoutes');
 const adminRoutes = require('./routes/admin'); // Imported from first block
-
+const weatherroutes = require('./routes/weatherRoutes');
 // --- Route Definitions ---
 
 // Home route FIRST
@@ -99,7 +99,8 @@ app.use("/vet-auth", vetAuthRoutes);
 app.use("/teleVet", teleVetRoutes);
 app.use("/dealer-auth", dealerAuthRoutes);
 app.use("/stock", stockRoutes);
-app.use('/admin', adminRoutes); // Admin Portal Route
+app.use('/admin', adminRoutes);
+app.use('/weather',weatherroutes);
 
 // Debug endpoint to inspect active user -> socket mappings (temporary)
 const userSocketMap = {}; // { userId: socketId }
