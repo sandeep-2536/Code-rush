@@ -10,7 +10,7 @@ async function testGeminiIntegration() {
     
     // Check environment variables
     console.log('1️⃣ Checking environment variables...');
-    const requiredVars = ['MONGODB_URI', 'GEMINI_API_KEY'];
+    const requiredVars = ['MONGODB_URI', 'GEMINI_API_KEY1'];
     let missingVars = [];
     
     requiredVars.forEach(varName => {

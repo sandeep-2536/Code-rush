@@ -3,7 +3,7 @@ const PendingScheme = require('../models/PendingScheme');
 const Scheme = require('../models/Scheme');
 
 // Initialize Gemini API
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY1);
 
 // ========================
 // FETCH NEW SCHEMES FROM GEMINI

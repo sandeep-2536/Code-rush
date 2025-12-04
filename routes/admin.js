@@ -79,7 +79,7 @@ router.get('/system-monitor', adminController.checkAuth, async (req, res) => {
             recentPending,
             nextRun: nextRun.toLocaleString(),
             timeUntilNext: `${hoursUntilNext}h ${minutesUntilNext}m`,
-            geminiConfigured: !!process.env.GEMINI_API_KEY,
+            geminiConfigured: !!process.env.GEMINI_API_KEY1,
             twilioConfigured: !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN)
         });
     } catch (error) {
