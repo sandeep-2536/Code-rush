@@ -62,7 +62,6 @@
                     <li><a href="/animals" class="text-gray-400 hover:text-white transition" data-i18n="footer.livestock">Livestock Trading</a></li>
                     <li><a href="/crops" class="text-gray-400 hover:text-white transition" data-i18n="footer.crops">Sell Crops</a></li>
                     <li><a href="/stock" class="text-gray-400 hover:text-white transition" data-i18n="footer.stock">Find Stock</a></li>
-                    <li><a href="/teleVet" class="text-gray-400 hover:text-white transition" data-i18n="footer.vet">Vet Support</a></li>
                 </ul>
             </div>
 
@@ -92,21 +91,7 @@
     </div>
 </footer>
 
-<div id="incomingCallModal" class="incoming-modal" style="display: none">
-    <div class="incoming-box">
-        <div class="incoming-header">
-            <h3 data-i18n="call.incoming_title">Incoming Call</h3>
-        </div>
-        <div class="incoming-body">
-            <p id="incomingFrom" data-i18n="call.unknown">Unknown caller...</p>
-            <div class="incoming-actions">
-                <button id="acceptCallBtn" class="btn-accept" data-i18n="call.accept">Accept</button>
-                <button id="rejectCallBtn" class="btn-reject" data-i18n="call.reject">Reject</button>
-            </div>
-            <div id="callTimer" class="call-timer"></div>
-        </div>
-    </div>
-</div>
+<!-- Incoming call UI removed -->
 
 <!-- Embed logged-in user data for client-side access -->
 <% if (user) { %>
@@ -202,7 +187,6 @@
 
 <script src="/js/i18n.js"></script>
 <script src="/js/voiceOver.js"></script>
-<script src="/js/incomingCall.js"></script>
 <script src="/js/pageVoice.js"></script>
 
 <script>

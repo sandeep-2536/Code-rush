@@ -66,11 +66,10 @@ const communityRoutes = require("./routes/communityRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const communityProblemRoutes = require("./routes/communityProblemRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
-const callRoutes = require("./routes/callRoutes");
 const animalRoutes = require('./routes/animalRoutes');
 const cropRoutes = require('./routes/cropRoutes');
 const vetAuthRoutes = require("./routes/vetAuthRoutes");
-const teleVetRoutes = require("./routes/teleVetRoutes");
+// teleVet routes removed
 const dealerAuthRoutes = require('./routes/dealerAuthRoutes');
 const stockRoutes = require('./routes/stockRoutes');
 const i18nRoutes = require('./routes/i18nRoutes');
@@ -92,11 +91,9 @@ app.use("/community", communityRoutes);
 app.use("/community/chat", chatRoutes);
 app.use("/community/problems", communityProblemRoutes);
 app.use("/dashboard", dashboardRoutes);
-app.use("/call", callRoutes);
 app.use("/animals", animalRoutes);
 app.use("/crops", cropRoutes);
 app.use("/vet-auth", vetAuthRoutes);
-app.use("/teleVet", teleVetRoutes);
 app.use("/dealer-auth", dealerAuthRoutes);
 app.use("/stock", stockRoutes);
 app.use('/admin', adminRoutes);
@@ -130,65 +127,7 @@ io.on("connection", (socket) => {
         }
     });
 
-    // Caller requests to call a user by their userId
-    socket.on('callUser', ({ toUserId, roomId, fromUserId, fromName }) => {
-        console.log('[socket] callUser', { toUserId, roomId, fromUserId });
-        const targetSocketId = userSocketMap[toUserId];
-        if (targetSocketId) {
-            io.to(targetSocketId).emit('incomingCall', { fromUserId, fromName, roomId });
-        } else {
-            // Inform caller there's no connected socket for the callee
-            console.log('[socket] callUser - target not found. userSocketMap keys:', Object.keys(userSocketMap));
-            socket.emit('noAnswer', { toUserId });
-        }
-    });
-
-    // Callee accepts the call — notify the caller
-    socket.on('acceptCall', ({ callerUserId, roomId }) => {
-        const callerSocketId = userSocketMap[callerUserId];
-        console.log('[socket] acceptCall', { callerUserId, roomId, callerSocketId });
-        if (callerSocketId) {
-            io.to(callerSocketId).emit('callAccepted', { roomId });
-        }
-    });
-
-    // Callee rejects the call
-    socket.on('rejectCall', ({ callerUserId }) => {
-        const callerSocketId = userSocketMap[callerUserId];
-        if (callerSocketId) {
-            io.to(callerSocketId).emit('callRejected', { by: socket.id });
-        }
-    });
-
-    // WebRTC/Video Call Signaling
-    socket.on("joinRoom", (roomId) => {
-        try {
-            socket.join(roomId);
-            const room = io.sockets.adapter.rooms.get(roomId);
-            const members = room ? Array.from(room) : [];
-            console.log('[socket] joinRoom', { roomId, socketId: socket.id, members });
-            socket.to(roomId).emit("ready");
-            console.log('[socket] ready emitted to room', roomId);
-        } catch (e) {
-            console.warn('[socket] joinRoom error', e);
-        }
-    });
-
-    socket.on("offer", ({ roomId, offer }) => {
-        console.log('[socket] forwarding offer to room', roomId);
-        socket.to(roomId).emit("offer", offer);
-    });
-
-    socket.on("answer", ({ roomId, answer }) => {
-        console.log('[socket] forwarding answer to room', roomId);
-        socket.to(roomId).emit("answer", answer);
-    });
-
-    socket.on("iceCandidate", ({ roomId, candidate }) => {
-        // candidate is an RTCIceCandidateInit-like object
-        console.log('[socket] forwarding iceCandidate to room', roomId);
-        socket.to(roomId).emit("iceCandidate", { candidate });
-    });
+    // Video-call related socket handlers removed
 
     // Clean up mapping when socket disconnects
     socket.on('disconnect', () => {
