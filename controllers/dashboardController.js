@@ -1,5 +1,6 @@
 const Post = require("../models/Post");
 const Comment = require("../models/Comment");
+const axios = require('axios');
 
 exports.getDashboard = async (req, res) => {
     if (!req.session.user) return res.redirect("/auth/login");
@@ -69,6 +70,32 @@ exports.getDashboard = async (req, res) => {
             .sort((a, b) => new Date(b.date) - new Date(a.date))
             .slice(0, 10);
 
+        // Try to fetch simple current weather for user's location (if available)
+        let weather = [];
+        try {
+            const apiKey = process.env.OPENWEATHERMAP_API_KEY;
+            // Try to use village, city or state as a simple query
+            const locationQuery = (req.session.user && (req.session.user.village || req.session.user.city || req.session.user.state)) || process.env.DEFAULT_WEATHER_CITY;
+            if (apiKey && locationQuery) {
+                const weatherRes = await axios.get('https://api.openweathermap.org/data/2.5/weather', {
+                    params: {
+                        q: locationQuery,
+                        units: 'metric',
+                        appid: apiKey
+                    }
+                });
+                const w = weatherRes.data;
+                weather = [{
+                    date: new Date().toLocaleDateString(),
+                    icon: (w.weather && w.weather[0] && w.weather[0].icon) || '01d',
+                    temp: Math.round(w.main && w.main.temp) || ''
+                }];
+            }
+        } catch (e) {
+            console.warn('[dashboard] weather fetch failed:', e.message);
+            weather = [];
+        }
+
         res.render("dashboard/dashboard", {
             user: req.session.user,
             myCommunityPosts,
@@ -79,7 +106,9 @@ exports.getDashboard = async (req, res) => {
             myVetCalls,
             myAISearches,
             myStockViews,
-            recentActivity
+            recentActivity,
+            weather,
+            aiAdvice: ''
         });
     } catch (err) {
         console.error('[dashboard] error:', err);
@@ -95,6 +124,8 @@ exports.getDashboard = async (req, res) => {
             myStockViews: [],
             recentActivity: [],
             error: 'Error loading dashboard data'
+            , weather: [],
+            aiAdvice: ''
         });
     }
 };

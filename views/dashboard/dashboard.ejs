@@ -3,145 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <title data-i18n="dashboard.page_title">AAROHI | Dashboard</title>
-
     <link rel="stylesheet" href="/css/output.css">
-
     <style>
-        body { background: #f8fafc; }
+        /* Smooth gradient background for a modern feel */
+        body { background: linear-gradient(180deg, #f0fdf4 0%, #f8fafc 100%); }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        /* Hide scrollbar for weather forecast horizontal scroll */
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 
-<body class="min-h-screen">
+<body class="min-h-screen text-slate-800 font-sans">
 
 <%- include("../layouts/header") %>
 
-<div class="max-w-6xl mx-auto px-4 py-8">
+<div class="max-w-7xl mx-auto px-4 py-8">
 
-    <h1 class="text-3xl font-bold mb-4 flex items-center gap-2">
-        👨‍🌾 <span data-i18n="dashboard.welcome">Welcome</span>, <span class="text-green-700"><%= user.name %></span>
-    </h1>
+    <header class="mb-8">
+        <h1 class="text-3xl font-bold flex items-center gap-3 text-slate-700">
+            <span>👨‍🌾</span> 
+            <span><span data-i18n="dashboard.welcome">Namaste</span>, <span class="text-green-700"><%= user.name %></span>!</span>
+        </h1>
+        <p class="text-slate-500 ml-10">Here is your farm's daily summary.</p>
+    </header>
 
-    <div class="bg-white rounded-xl shadow p-5 flex items-center gap-4 mb-8">
-        <img src="<%= user.profileImage %>" class="w-20 h-20 rounded-full border border-gray-300">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
         
-        <div>
-            <h2 class="text-xl font-semibold" data-i18n="dashboard.profile.title">Farmer Profile</h2>
-            <p class="text-gray-600">
-                📱 <b data-i18n="dashboard.profile.mobile">Mobile:</b> <%= user.mobileNumber %>  
-            </p>
-            <p class="text-gray-600">
-                📍 <b data-i18n="dashboard.profile.location">Location:</b> <%= user.village || "Not set" %>, <%= user.state || "Not set" %>
-            </p>
-            <p class="text-gray-600">
-                🌱 <b data-i18n="dashboard.profile.type">Type:</b> <%= user.farmerType %>
-            </p>
+        <div class="glass-card rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-center">
+            <div class="flex items-center gap-5 mb-4">
+                <img src="<%= user.profileImage || '/images/default-farmer.png' %>" class="w-20 h-20 rounded-full border-4 border-green-50 object-cover shadow-sm">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800"><%= user.name %></h2>
+                    <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-semibold uppercase"><%= user.farmerType %></span>
+                </div>
+            </div>
+            <div class="space-y-2 text-sm text-slate-600 bg-slate-50 p-4 rounded-xl">
+                <p>📱 <b>Mobile:</b> <%= user.mobileNumber %></p>
+                <p>📍 <b>Location:</b> <%= user.village || "Not set" %>, <%= user.state %></p>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 bg-gradient-to-br from-green-600 to-green-800 rounded-2xl shadow-lg text-white p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
+
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2 opacity-90">
+                ☁️ Weather & AI Farm Advisory
+            </h2>
+
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="flex-1">
+                    <% if (weather && weather.length > 0) { %>
+                        <div class="flex gap-3 overflow-x-auto hide-scroll pb-2">
+                            <% weather.forEach((day, index) => { %>
+                                <div class="flex-shrink-0 w-20 bg-white/20 backdrop-blur-sm rounded-xl p-3 text-center border border-white/10 <%= index === 0 ? 'bg-white/30 font-bold' : '' %>">
+                                    <p class="text-xs opacity-80 mb-1"><%= day.date %></p>
+                                    <img src="http://openweathermap.org/img/wn/<%= day.icon %>.png" class="w-10 h-10 mx-auto" alt="icon">
+                                    <p class="text-lg font-bold"><%= day.temp %>°</p>
+                                </div>
+                            <% }) %>
+                        </div>
+                    <% } else { %>
+                        <div class="bg-white/10 rounded-xl p-4 text-center">
+                            <p>Weather data unavailable. Please update location.</p>
+                        </div>
+                    <% } %>
+                </div>
+
+                <div class="flex-1 bg-white text-slate-800 rounded-xl p-4 shadow-lg border-l-4 border-yellow-400">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="animate-pulse text-yellow-500">✨</span>
+                        <h3 class="font-bold text-sm uppercase text-slate-500">AI Suggestion</h3>
+                    </div>
+                    <div class="text-sm leading-relaxed text-slate-700 prose-ul:list-disc prose-ul:pl-4">
+                        <%- aiAdvice || "AI is analyzing weather data..." %>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <h2 class="text-xl font-bold mb-4 text-slate-700">📊 Farm Statistics</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <% 
+        const stats = [
+            { count: myCommunityPosts.length, label: "My Posts", color: "green", icon: "🌿" },
+            { count: myComments.length, label: "Comments", color: "blue", icon: "💬" },
+            { count: myProblems.length, label: "Problems", color: "orange", icon: "🆘" },
+            { count: myAnimals.length, label: "Animals", color: "red", icon: "🐄" },
+            { count: myCrops.length, label: "Crops", color: "yellow", icon: "🌾" },
+            { count: myVetCalls.length, label: "Vet Calls", color: "purple", icon: "🐮" },
+            { count: myAISearches.length, label: "AI Queries", color: "pink", icon: "🤖" },
+            { count: myStockViews.length, label: "Stock Checks", color: "gray", icon: "📦" }
+        ];
+        %>
 
-        <div class="bg-green-100 rounded-xl p-5 shadow text-center">
-            <h2 class="text-3xl font-bold text-green-700"><%= myCommunityPosts.length %></h2>
-            <p class="font-medium" data-i18n="dashboard.stats.posts">Community Posts</p>
-        </div>
-
-        <div class="bg-blue-100 rounded-xl p-5 shadow text-center">
-            <h2 class="text-3xl font-bold text-blue-700"><%= myComments.length %></h2>
-            <p class="font-medium" data-i18n="dashboard.stats.comments">Comments</p>
-        </div>
-
-        <div class="bg-orange-100 rounded-xl p-5 shadow text-center">
-            <h2 class="text-3xl font-bold text-orange-700"><%= myProblems.length %></h2>
-            <p class="font-medium" data-i18n="dashboard.stats.problems">Problems Reported</p>
-        </div>
-
-        <div class="bg-red-100 rounded-xl p-5 shadow text-center">
-            <h2 class="text-3xl font-bold text-red-700"><%= myAnimals.length %></h2>
-            <p class="font-medium" data-i18n="dashboard.stats.animals">Animals Listed</p>
-        </div>
-
-        <div class="bg-yellow-100 rounded-xl p-5 shadow text-center">
-            <h2 class="text-3xl font-bold text-yellow-700"><%= myCrops.length %></h2>
-            <p class="font-medium" data-i18n="dashboard.stats.crops">Crops Listed</p>
-        </div>
-
-        <div class="bg-purple-100 rounded-xl p-5 shadow text-center">
-            <h2 class="text-3xl font-bold text-purple-700"><%= myVetCalls.length %></h2>
-            <p class="font-medium" data-i18n="dashboard.stats.vet_calls">Tele-Vet Calls</p>
-        </div>
-
-        <div class="bg-pink-100 rounded-xl p-5 shadow text-center">
-            <h2 class="text-3xl font-bold text-pink-700"><%= myAISearches.length %></h2>
-            <p class="font-medium" data-i18n="dashboard.stats.ai_queries">AI Assistant Queries</p>
-        </div>
-
-        <div class="bg-gray-100 rounded-xl p-5 shadow text-center">
-            <h2 class="text-3xl font-bold text-gray-700"><%= myStockViews.length %></h2>
-            <p class="font-medium" data-i18n="dashboard.stats.stock_checks">Stock Checks</p>
-        </div>
+        <% stats.forEach(stat => { %>
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-800"><%= stat.count %></h2>
+                        <p class="text-sm font-medium text-slate-500"><%= stat.label %></p>
+                    </div>
+                    <div class="bg-<%= stat.color %>-50 p-2 rounded-lg text-xl">
+                        <%= stat.icon %>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
     </div>
 
-    <h2 class="text-xl font-bold mb-3" data-i18n="dashboard.nav.title">🚀 Quick Navigation</h2>
+    <h2 class="text-xl font-bold mb-4 text-slate-700">🚀 Quick Actions</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
+        
+        <% 
+        const navItems = [
+            { link: "/community", label: "Community", icon: "🌿", color: "hover:bg-green-50 hover:border-green-200" },
+            { link: "/community/chat", label: "Group Chat", icon: "💬", color: "hover:bg-blue-50 hover:border-blue-200" },
+            { link: "/community", label: "Report Issue", icon: "🆘", color: "hover:bg-orange-50 hover:border-orange-200" },
+            { link: "/animals", label: "Sell Animals", icon: "🐄", color: "hover:bg-red-50 hover:border-red-200" },
+            { link: "/crops", label: "Sell Crops", icon: "🌾", color: "hover:bg-yellow-50 hover:border-yellow-200" },
+            { link: "/stock", label: "Check Stock", icon: "📦", color: "hover:bg-gray-50 hover:border-gray-200" },
+            { link: "/teleVet", label: "Call Vet", icon: "🩺", color: "hover:bg-purple-50 hover:border-purple-200" },
+            { link: "/ai/assistant", label: "Ask AI", icon: "🤖", color: "hover:bg-pink-50 hover:border-pink-200" }
+        ];
+        %>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-
-        <a href="/community" class="p-4 bg-white shadow rounded-xl text-center hover:bg-green-50">
-            🌿 <br><span data-i18n="nav.community">Community</span>
-        </a>
-
-        <a href="/community/chat" class="p-4 bg-white shadow rounded-xl text-center hover:bg-blue-50">
-            💬 <br><span data-i18n="dashboard.nav.group_chat">Group Chat</span>
-        </a>
-
-        <a href="/community" class="p-4 bg-white shadow rounded-xl text-center hover:bg-orange-50">
-            🆘 <br><span data-i18n="dashboard.nav.problems">Problems</span>
-        </a>
-
-        <a href="/animals" class="p-4 bg-white shadow rounded-xl text-center hover:bg-red-50">
-            🐄 <br><span data-i18n="footer.livestock">Sell Animals</span>
-        </a>
-
-        <a href="/crops" class="p-4 bg-white shadow rounded-xl text-center hover:bg-yellow-50">
-            🌾 <br><span data-i18n="footer.crops">Sell Crops</span>
-        </a>
-
-        <a href="/stock" class="p-4 bg-white shadow rounded-xl text-center hover:bg-gray-50">
-            📦 <br><span data-i18n="dashboard.nav.stock_q">Where is Stock?</span>
-        </a>
-
-        <a href="/teleVet" class="p-4 bg-white shadow rounded-xl text-center hover:bg-purple-50">
-            🐮 <br><span data-i18n="footer.vet">Tele-Vet</span>
-        </a>
-
-        <a href="/ai/assistant" class="p-4 bg-white shadow rounded-xl text-center hover:bg-pink-50">
-            🤖 <br><span data-i18n="nav.ask_ai">AI Assistant</span>
-        </a>
+        <% navItems.forEach(item => { %>
+            <a href="<%= item.link %>" class="group bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3 transition-all duration-200 <%= item.color %>">
+                <span class="text-2xl group-hover:scale-110 transition-transform"><%= item.icon %></span>
+                <span class="font-semibold text-slate-700"><%= item.label %></span>
+            </a>
+        <% }) %>
     </div>
 
-    <h2 class="text-xl font-bold mb-3" data-i18n="dashboard.recent_activity">📌 Recent Activity</h2>
+    <h2 class="text-xl font-bold mb-4 text-slate-700">📌 Recent Activity</h2>
+    <div class="space-y-3">
+        <% if(recentActivity.length === 0) { %>
+            <p class="text-slate-400 text-center py-8">No recent activity found.</p>
+        <% } %>
 
-    <div class="space-y-4">
         <% recentActivity.forEach(a => { %>
-
-        <a href="<%= a.url %>" class="bg-white p-4 rounded-xl shadow flex gap-4 items-start hover:shadow-lg hover:bg-gray-50 transition duration-300 block">
-
-            <div class="text-2xl">
-                <% if (a.type === 'problem') { %> 🆘 
-                <% } else if (a.type === 'animal') { %> 🐄 
-                <% } else if (a.type === 'crop') { %> 🌾 
-                <% } else if (a.type === 'post') { %> 🌿 
-                <% } else if (a.type === 'comment') { %> 💬 
-                <% } else if (a.type === 'vet') { %> 🐮 
-                <% } else { %> 📌 <% } %>
-            </div>
-
-            <div>
-                <p class="font-medium"><%= a.text %></p>
-                <p class="text-sm text-gray-500"><%= new Date(a.date).toLocaleString() %></p>
-            </div>
-
-        </a>
-
+            <a href="<%= a.url %>" class="block bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:shadow-md hover:border-green-200 transition duration-300">
+                <div class="flex items-center gap-4">
+                    <div class="bg-slate-50 w-10 h-10 flex items-center justify-center rounded-full text-lg">
+                        <% if (a.type === 'problem') { %> 🆘 
+                        <% } else if (a.type === 'animal') { %> 🐄 
+                        <% } else if (a.type === 'crop') { %> 🌾 
+                        <% } else if (a.type === 'post') { %> 🌿 
+                        <% } else if (a.type === 'comment') { %> 💬 
+                        <% } else if (a.type === 'vet') { %> 🩺 
+                        <% } else { %> 📌 <% } %>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-medium text-slate-800"><%= a.text %></p>
+                        <p class="text-xs text-slate-400"><%= new Date(a.date).toLocaleString() %></p>
+                    </div>
+                    <div class="text-slate-300">›</div>
+                </div>
+            </a>
         <% }) %>
     </div>
 
