@@ -1,13 +1,9 @@
-
-
-// Expose user language preference to all views
 const express = require("express");
 const path = require("path");
 const app = express();
 require("dotenv").config();
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
-const i18n = require("i18n");
 const port = process.env.PORT || 3000;
 const cookieParser = require("cookie-parser");
 
@@ -32,27 +28,9 @@ app.use(session({
     saveUninitialized: true
 }));
 
-// Expose logged-in user (from session) to all views as `user`
+// Expose logged-in user (from session) to all views as user
 app.use((req, res, next) => {
     res.locals.user = req.session && req.session.user ? req.session.user : null;
-    next();
-});
-
-i18n.configure({
-    locales: ["en", "hi", "kn"],
-    directory: __dirname + "/locales",
-    cookie: "aarohi_lang",
-    defaultLocale: "en",
-    autoReload: true,
-    updateFiles: false
-});
-
-app.use(i18n.init);
-
-// Make language available to EJS
-app.use((req, res, next) => {
-    res.locals.__ = res.__;
-    res.locals.lang = req.cookies?.aarohi_lang || "en";
     next();
 });
 
@@ -78,17 +56,18 @@ const vetAuthRoutes = require("./routes/vetAuthRoutes");
 const teleVetRoutes = require("./routes/teleVetRoutes");
 const dealerAuthRoutes = require('./routes/dealerAuthRoutes');
 const stockRoutes = require('./routes/stockRoutes');
-const i18nRoutes = require('./routes/i18nRoutes');
+const adminRoutes = require('./routes/admin');
+
 // Home route FIRST (to avoid conflict)
 app.get('/', (req, res) => {
     res.render('home/home');
 });
 
 // Clean route structure
+app.use("/lang", require("./routes/langRoutes"));
 
 app.use("/auth", authRoutes);
 app.use("/ai", aiRoutes);
-app.use('/i18n', i18nRoutes);
 app.use("/schemes", schemeRoutes);
 app.use('/farmer', farmerRoutes);
 app.use("/community", communityRoutes);
@@ -102,6 +81,7 @@ app.use("/vet-auth", vetAuthRoutes);
 app.use("/teleVet", teleVetRoutes);
 app.use("/dealer-auth", dealerAuthRoutes);
 app.use("/stock", stockRoutes);
+app.use('/admin', adminRoutes);
 
 // Debug endpoint to inspect active user -> socket mappings (temporary)
 app.get('/debug/sockets', (req, res) => {
@@ -111,7 +91,6 @@ app.get('/debug/sockets', (req, res) => {
         res.status(500).json({ error: 'Failed to read socket map' });
     }
 });
-
 
 
 // Map users to sockets (top-level so it persists across connections)
@@ -290,24 +269,23 @@ io.on("connection", (socket) => {
         }
     });
 
-
 });
 
 
-// Add error handler so EADDRINUSE is reported cleanly on Windows
-http.on('error', (err) => {
-    if (err && err.code === 'EADDRINUSE') {
-        console.error(`🚫 Port ${port} is already in use. Choose a different PORT in your .env or stop the process using the port.`);
-        console.error('To find and stop the process on Windows (PowerShell):');
-        console.error('  netstat -ano | findstr :<PORT>');
-        console.error('  taskkill /PID <PID> /F');
-        process.exit(1);
-    }
-    console.error('Server error:', err);
-    process.exit(1);
-});
+
+// // Add error handler so EADDRINUSE is reported cleanly on Windows
+// http.on('error', (err) => {
+//     if (err && err.code === 'EADDRINUSE') {
+//         console.error(🚫 Port ${port} is already in use. Choose a different PORT in your .env or stop the process using the port.);
+//         console.error('To find and stop the process on Windows (PowerShell):');
+//         console.error('  netstat -ano | findstr :<PORT>');
+//         console.error('  taskkill /PID <PID> /F');
+//         process.exit(1);
+//     }
+//     console.error('Server error:', err);
+//     process.exit(1);
+// });
 
 http.listen(port, () => {
     console.log("🚀 Socket.IO + Server running on", port);
 });
-

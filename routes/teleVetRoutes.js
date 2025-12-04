@@ -18,7 +18,7 @@ router.get('/doctor/dashboard', (req, res) => {
 // ============================================
 // GET: FARMER CALL PAGE (to initiate call to specific vet)
 // ============================================
-router.get('/:vetId/call', async (req, res) => {
+router.get('/farmer/call/:vetId', async (req, res) => {
   try {
     const farmer = req.session.user;
     if (!farmer) return res.redirect('/auth/login');
@@ -97,8 +97,6 @@ router.get('/doctor/call', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const farmer = req.session.user;
-    if (!farmer) return res.redirect('/auth/login');
-    
     const vets = await Vet.find().select('_id name specialization profileImage').lean();
     
     console.log('[teleVetRoutes] vet list accessed, found:', vets.length);

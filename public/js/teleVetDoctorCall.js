@@ -2,6 +2,7 @@
 (function () {
   const socket = io();
 
+  // Read config from DOM
   const cfgEl = document.getElementById('teleVetConfig');
   const cfg = cfgEl ? cfgEl.dataset : {};
   const vetId = cfg.vetId || '';
@@ -21,6 +22,7 @@
   let pc = null;
   let isMuted = false;
   let cameraOff = false;
+  let isConnected = false;
 
   const rtcConfig = {
     iceServers: [
@@ -29,14 +31,18 @@
     ]
   };
 
-  console.log('[teleVetDoctorCall] initialized:', { vetId, farmerId, roomId });
+  console.log('[teleVetDoctorCall] initialized:', { vetId, farmerId, roomId, vetName, farmerName });
 
-  // Register vet
-  socket.emit("register", vetId);
-
-  socket.on('registered', (data) => {
-    console.log('[teleVetDoctorCall] registered:', data);
-  });
+  // Wait for socket to connect, then register vet
+  if (socket.connected) {
+    socket.emit("register", vetId);
+    console.log('[teleVetDoctorCall] registered vet:', vetId);
+  } else {
+    socket.on('connect', () => {
+      socket.emit("register", vetId);
+      console.log('[teleVetDoctorCall] registered vet after connect:', vetId);
+    });
+  }
 
   function createPeerConnection() {
     console.log('[teleVetDoctorCall] creating peer connection');

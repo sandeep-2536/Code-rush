@@ -1,16 +1,28 @@
 const twilio = require('twilio');
 const Scheme = require('../models/Scheme');
 const Farmer = require('../models/Farmer');
-require("dotenv").config();
-// Twilio configuration
-const accountSid = process.env.TWILIO_ACCOUNT_SID ;
-const authToken = process.env.TWILIO_AUTH_TOKEN ;
-const twilioPhone = process.env.TWILIO_PHONE;
-const twilioClient = twilio(accountSid, authToken);
 
-// Admin credentials (should be in .env file in production)
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+// ✅ Twilio configuration - NO hardcoded values
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhone = process.env.TWILIO_PHONE;
+
+// Check if Twilio credentials are configured
+if (!accountSid || !authToken || !twilioPhone) {
+    console.warn('⚠️  Twilio credentials not configured. SMS notifications will be disabled.');
+}
+
+const twilioClient = accountSid && authToken ? twilio(accountSid, authToken) : null;
+
+// ✅ Admin credentials - NO hardcoded values
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+// Check if admin credentials are configured
+if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+    console.error('❌ Admin credentials not set in .env file!');
+    process.exit(1);
+}
 
 // ========================
 // AUTHENTICATION
@@ -40,7 +52,17 @@ exports.postLogin = (req, res) => {
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
         req.session.isAdmin = true;
         req.session.adminUsername = username;
-        res.redirect('/admin/dashboard');
+        
+        // Save session explicitly
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                return res.render('admin/login', { 
+                    error: 'Session error. Please try again.' 
+                });
+            }
+            res.redirect('/admin/dashboard');
+        });
     } else {
         res.render('admin/login', { 
             error: 'Invalid username or password' 
@@ -227,6 +249,12 @@ exports.deleteScheme = async (req, res) => {
 
 // Send SMS for new scheme
 async function sendSchemeNotification(schemeName, state) {
+    // Check if Twilio is configured
+    if (!twilioClient) {
+        console.warn('⚠️  Twilio not configured. Skipping SMS notification.');
+        return;
+    }
+
     try {
         // Get farmers (optionally filter by state)
         let query = { smsEnabled: true };
@@ -243,7 +271,7 @@ async function sendSchemeNotification(schemeName, state) {
             return;
         }
 
-        const message = 🌾 New Government Scheme Alert!\n\n"${schemeName}" is now available for ${state} farmers.\n\nVisit Aarohi Agriculture app to learn more and apply!;
+        const message = `🌾 New Government Scheme Alert!\n\n"${schemeName}" is now available for ${state} farmers.\n\nVisit Aarohi Agriculture app to learn more and apply!`;
         
         // Send SMS to each farmer (in batches to avoid rate limits)
         const batchSize = 10;
@@ -257,7 +285,7 @@ async function sendSchemeNotification(schemeName, state) {
                         from: twilioPhone,
                         to: farmer.phone
                     }).catch(err => {
-                        console.error(Failed to send SMS to ${farmer.phone}:, err.message);
+                        console.error(`Failed to send SMS to ${farmer.phone}:`, err.message);
                         return null;
                     });
                 }
@@ -271,7 +299,7 @@ async function sendSchemeNotification(schemeName, state) {
             }
         }
         
-        console.log(✅ SMS notifications sent to ${farmers.length} farmers);
+        console.log(`✅ SMS notifications sent to ${farmers.length} farmers`);
     } catch (error) {
         console.error('Error sending SMS notifications:', error);
     }
@@ -279,6 +307,12 @@ async function sendSchemeNotification(schemeName, state) {
 
 // Send SMS for scheme update
 async function sendSchemeUpdateNotification(schemeName, state) {
+    // Check if Twilio is configured
+    if (!twilioClient) {
+        console.warn('⚠️  Twilio not configured. Skipping SMS notification.');
+        return;
+    }
+
     try {
         let query = { smsEnabled: true };
         
@@ -293,7 +327,7 @@ async function sendSchemeUpdateNotification(schemeName, state) {
             return;
         }
 
-        const message = 📢 Scheme Update!\n\n"${schemeName}" has been updated. Check the Aarohi Agriculture app for latest details.\n\n- Aarohi Team;
+        const message = `📢 Scheme Update!\n\n"${schemeName}" has been updated. Check the Aarohi Agriculture app for latest details.\n\n- Aarohi Team`;
         
         const batchSize = 10;
         for (let i = 0; i < farmers.length; i += batchSize) {
@@ -306,7 +340,7 @@ async function sendSchemeUpdateNotification(schemeName, state) {
                         from: twilioPhone,
                         to: farmer.phone
                     }).catch(err => {
-                        console.error(Failed to send SMS to ${farmer.phone}:, err.message);
+                        console.error(`Failed to send SMS to ${farmer.phone}:`, err.message);
                         return null;
                     });
                 }
@@ -319,7 +353,7 @@ async function sendSchemeUpdateNotification(schemeName, state) {
             }
         }
         
-        console.log(✅ Update notifications sent to ${farmers.length} farmers);
+        console.log(`✅ Update notifications sent to ${farmers.length} farmers`);
     } catch (error) {
         console.error('Error sending update notifications:', error);
     }

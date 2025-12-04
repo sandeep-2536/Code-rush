@@ -107,6 +107,14 @@
     </div>
 </div>
 
+<!-- Embed logged-in user data for client-side access -->
+<% if (user) { %>
+<div id="currentUserData" style="display:none;" data-user-id="<%= user._id %>" data-user-name="<%= user.name %>" data-user-profile="<%= user.profileImage || '/images/default-user.png' %>"></div>
+<% } %>
+<% if (typeof vet !== 'undefined' && vet) { %>
+<div id="currentVetData" style="display:none;" data-vet-id="<%= vet._id %>" data-vet-name="<%= vet.name %>"></div>
+<% } %>
+
 <div class="fixed bottom-4 right-4 bg-white p-3 rounded-xl shadow-xl w-44 text-sm z-50">
   <button onclick="toggleVoice()" class="w-full p-2 rounded bg-green-600 text-white mb-2">
     🔊 <span data-i18n="voice.voice_label">Voice</span>: <span id="voiceState" data-i18n="voice.on">On</span>
@@ -131,20 +139,37 @@
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
+
 <script>
     // Set global user/lang config
     window.CURRENT_USER = null;
+    window.CURRENT_VET = null;
     window.SERVER_USER_LANG = "<%= typeof userLang !== 'undefined' ? userLang : 'en' %>"; // from Express
     
-    // <%_ if (user) { _%>
-    // CURRENT_USER = {
-    //     _id: "<%- user._id %>",
-    //     name: "<%- user.name %>",
-    //     profileImage: "<%- user.profileImage || '/images/default-user.png' %>"
-    // };
-    // <%_ } _%>
-
-    // Helper to render Mobile Profile Link with Translation
+    // Read user data from DOM
+    var userDataEl = document.getElementById('currentUserData');
+    if (userDataEl) {
+        var userId = userDataEl.getAttribute('data-user-id');
+        if (userId) {
+            window.CURRENT_USER = {
+                _id: userId,
+                name: userDataEl.getAttribute('data-user-name'),
+                profileImage: userDataEl.getAttribute('data-user-profile')
+            };
+        }
+    }
+    
+    // Read vet data from DOM
+    var vetDataEl = document.getElementById('currentVetData');
+    if (vetDataEl) {
+        var vetId = vetDataEl.getAttribute('data-vet-id');
+        if (vetId) {
+            window.CURRENT_VET = {
+                _id: vetId,
+                name: vetDataEl.getAttribute('data-vet-name')
+            };
+        }
+    }
     function renderMobileProfile() {
         var container = document.getElementById('mobileProfileLink');
         if (!container) return;
