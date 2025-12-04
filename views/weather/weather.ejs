@@ -430,5 +430,28 @@
     </main>
 
     <%- include("../layouts/footer") %>
+    <script>
+        (function() {
+            // If URL already contains lat/lon, do nothing.
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('lat') || params.has('lon')) return;
+
+            // Ask for geolocation; if granted, redirect to server with coords
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    // Redirect to weather page with coordinates so server reverse-geocodes and returns location-specific weather
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('lat', lat);
+                    url.searchParams.set('lon', lon);
+                    window.location.replace(url.toString());
+                }, function(err) {
+                    console.warn('Geolocation error or permission denied:', err && err.message);
+                    // silently continue with server-side/default location
+                }, { enableHighAccuracy: true, timeout: 8000 });
+            }
+        })();
+    </script>
 </body>
 </html>

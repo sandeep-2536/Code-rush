@@ -23,10 +23,27 @@ exports.getWeatherPage = async (req, res) => {
         }
 
         // Location fallback chain
-        const locationQuery = (user && (user.village || user.city || user.district || user.state)) || 
+        let locationQuery = (user && (user.village || user.city || user.district || user.state)) ||
                               process.env.DEFAULT_WEATHER_CITY || "Delhi";
 
+        // If browser provided coordinates via query string, use reverse geocoding to get a location name
+        const { lat, lon } = req.query || {};
         const apiKey = process.env.WEATHER_API_KEY || process.env.OPENWEATHERMAP_API_KEY;
+        if (lat && lon && apiKey) {
+            try {
+                const geoUrl = `http://api.openweathermap.org/geo/1.0/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&limit=1&appid=${apiKey}`;
+                const geoRes = await axios.get(geoUrl);
+                if (Array.isArray(geoRes.data) && geoRes.data.length > 0) {
+                    const place = geoRes.data[0];
+                    // prefer city name, fallback to name field
+                    locationQuery = place.name || `${place.local_names?.en || ''}` || locationQuery;
+                    console.log('[weather] Reverse geocoded coordinates to:', locationQuery);
+                }
+            } catch (geoErr) {
+                console.warn('[weather] Reverse geocode failed:', geoErr.message);
+            }
+        }
+        
         
         let weatherData = null;
         let detailedForecast = [];
