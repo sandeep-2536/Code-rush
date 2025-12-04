@@ -494,6 +494,12 @@
   .mr-2 {
     margin-right: calc(var(--spacing) * 2);
   }
+<<<<<<< HEAD
+=======
+  .mr-3 {
+    margin-right: calc(var(--spacing) * 3);
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .mr-6 {
     margin-right: calc(var(--spacing) * 6);
   }
@@ -527,6 +533,12 @@
   .mb-12 {
     margin-bottom: calc(var(--spacing) * 12);
   }
+<<<<<<< HEAD
+=======
+  .mb-20 {
+    margin-bottom: calc(var(--spacing) * 20);
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .-ml-24 {
     margin-left: calc(var(--spacing) * -24);
   }
@@ -569,6 +581,12 @@
   .inline-flex {
     display: inline-flex;
   }
+<<<<<<< HEAD
+=======
+  .table {
+    display: table;
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .aspect-square {
     aspect-ratio: 1 / 1;
   }
@@ -662,6 +680,12 @@
   .max-h-full {
     max-height: 100%;
   }
+<<<<<<< HEAD
+=======
+  .min-h-\[70vh\] {
+    min-height: 70vh;
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .min-h-\[400px\] {
     min-height: 400px;
   }
@@ -937,6 +961,12 @@
   .overflow-hidden {
     overflow: hidden;
   }
+<<<<<<< HEAD
+=======
+  .overflow-x-auto {
+    overflow-x: auto;
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .overflow-y-auto {
     overflow-y: auto;
   }
@@ -1019,6 +1049,12 @@
       border-color: color-mix(in oklab, var(--color-blue-400) 30%, transparent);
     }
   }
+<<<<<<< HEAD
+=======
+  .border-blue-500 {
+    border-color: var(--color-blue-500);
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .border-emerald-100 {
     border-color: var(--color-emerald-100);
   }
@@ -1088,6 +1124,15 @@
       border-color: color-mix(in oklab, var(--color-purple-400) 30%, transparent);
     }
   }
+<<<<<<< HEAD
+=======
+  .border-purple-500 {
+    border-color: var(--color-purple-500);
+  }
+  .border-red-500 {
+    border-color: var(--color-red-500);
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .border-teal-100 {
     border-color: var(--color-teal-100);
   }
@@ -1127,6 +1172,12 @@
   .border-yellow-200 {
     border-color: var(--color-yellow-200);
   }
+<<<<<<< HEAD
+=======
+  .border-yellow-500 {
+    border-color: var(--color-yellow-500);
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .bg-amber-50 {
     background-color: var(--color-amber-50);
   }
@@ -1280,6 +1331,12 @@
       background-color: color-mix(in oklab, var(--color-purple-600) 90%, transparent);
     }
   }
+<<<<<<< HEAD
+=======
+  .bg-red-50 {
+    background-color: var(--color-red-50);
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .bg-red-100 {
     background-color: var(--color-red-100);
   }
@@ -2154,6 +2211,12 @@
       color: color-mix(in oklab, var(--color-white) 90%, transparent);
     }
   }
+<<<<<<< HEAD
+=======
+  .text-yellow-600 {
+    color: var(--color-yellow-600);
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .text-yellow-700 {
     color: var(--color-yellow-700);
   }
@@ -2372,6 +2435,19 @@
       }
     }
   }
+<<<<<<< HEAD
+=======
+  .group-hover\:bg-white\/30 {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        background-color: color-mix(in srgb, #fff 30%, transparent);
+        @supports (color: color-mix(in lab, red, red)) {
+          background-color: color-mix(in oklab, var(--color-white) 30%, transparent);
+        }
+      }
+    }
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .group-hover\:text-emerald-600 {
     &:is(:where(.group):hover *) {
       @media (hover: hover) {
@@ -2456,6 +2532,16 @@
       }
     }
   }
+<<<<<<< HEAD
+=======
+  .hover\:scale-\[1\.03\] {
+    &:hover {
+      @media (hover: hover) {
+        scale: 1.03;
+      }
+    }
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .hover\:rotate-6 {
     &:hover {
       @media (hover: hover) {
@@ -2997,6 +3083,16 @@
       }
     }
   }
+<<<<<<< HEAD
+=======
+  .hover\:opacity-80 {
+    &:hover {
+      @media (hover: hover) {
+        opacity: 80%;
+      }
+    }
+  }
+>>>>>>> bec285459dd997455e05efe2b5d86a72887e7182
   .hover\:shadow-2xl {
     &:hover {
       @media (hover: hover) {
