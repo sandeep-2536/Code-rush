@@ -1,0 +1,187 @@
+<!-- views/televet/vet-list.ejs -->
+<!DOCTYPE html>
+<html lang="<%= userLang || 'en' %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= __('TeleVet - Veterinarians') %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+  <!-- Navigation -->
+  <nav class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center space-x-4">
+          <a href="/dashboard" class="text-2xl font-bold text-green-600">
+            <i class="fas fa-leaf"></i> Aarohi
+          </a>
+          <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+            <i class="fas fa-video"></i> TeleVet
+          </span>
+        </div>
+        <div class="flex items-center space-x-4">
+          <a href="/dashboard" class="text-gray-600 hover:text-gray-900">
+            <i class="fas fa-home"></i> <%= __('Dashboard') %>
+          </a>
+          <div class="flex items-center space-x-2">
+            <img src="<%= user?.profileImage || '/images/default-user.png' %>" alt="<%= user?.name || '' %>"
+              class="w-8 h-8 rounded-full object-cover">
+            <span class="text-gray-700 font-medium"><%= user?.name || '' %></span>
+          </div>
+          <a href="/auth/logout" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+            <i class="fas fa-sign-out-alt"></i> <%= __('Logout') %>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">
+        <i class="fas fa-user-md text-blue-600"></i> <%= __('Available Veterinarians') %>
+      </h1>
+      <p class="text-gray-600"><%= __('Select a veterinarian to start a video consultation') %></p>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-r-lg">
+      <div class="flex items-center">
+        <i class="fas fa-info-circle text-blue-500 text-xl mr-3"></i>
+        <div>
+          <p class="text-blue-800 font-medium"><%= __('How it works') %></p>
+          <p class="text-blue-700 text-sm">
+            <%= __('Click "Start Video Call" to connect with a vet. Make sure your camera and microphone are enabled.') %>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vets Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <% vets.forEach(vet => { %>
+        <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-gray-100">
+          <!-- Vet Header -->
+          <div class="flex items-center mb-4">
+            <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-3xl">
+              <i class="fas fa-user-md text-white"></i>
+            </div>
+            <div class="ml-4 flex-1">
+              <h3 class="text-xl font-semibold text-gray-800"><%= vet.name %></h3>
+              <span class="inline-block px-3 py-1 text-xs bg-green-100 text-green-800 rounded-full mt-1">
+                <i class="fas fa-circle text-green-600"></i> <%= __('Available') %>
+              </span>
+            </div>
+          </div>
+
+          <!-- Vet Info -->
+          <div class="space-y-3 mb-4">
+            <% if (vet.specialization) { %>
+              <div class="flex items-start">
+                <i class="fas fa-stethoscope text-gray-500 text-sm mr-2 mt-1"></i>
+                <div class="flex-1">
+                  <p class="text-sm text-gray-500"><%= __('Specialization') %></p>
+                  <p class="text-gray-800 font-medium"><%= vet.specialization %></p>
+                </div>
+              </div>
+            <% } %>
+            <div class="flex items-start">
+              <i class="fas fa-phone text-gray-500 text-sm mr-2 mt-1"></i>
+              <div class="flex-1">
+                <p class="text-sm text-gray-500"><%= __('Contact') %></p>
+                <p class="text-gray-800 font-medium"><%= vet.phone %></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Call Button -->
+          <button onclick="initiateCall('<%= vet._id %>', '<%= vet.name %>')" 
+            class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition flex items-center justify-center font-medium shadow-sm hover:shadow-md">
+            <i class="fas fa-video mr-2"></i> <%= __('Start Video Call') %>
+          </button>
+        </div>
+      <% }); %>
+    </div>
+
+    <!-- No Vets Message -->
+    <% if (vets.length === 0) { %>
+      <div class="text-center py-12">
+        <i class="fas fa-hospital text-6xl text-gray-300 mb-4"></i>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2"><%= __('No Veterinarians Available') %></h3>
+        <p class="text-gray-500"><%= __('Please check back later') %></p>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Loading Modal -->
+  <div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2"><%= __('Connecting') %>...</h3>
+        <p class="text-gray-600"><%= __('Please wait while we connect you with the veterinarian') %></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Config data with i18n strings for JavaScript -->
+  <div id="vetListConfig" style="display:none"
+       data-confirm-text="<%= __('Start a video call with') %>"
+       data-failed-text="<%= __('Failed to initiate call. Please try again.') %>"
+       data-error-text="<%= __('An error occurred. Please try again.') %>">
+  </div>
+
+  <script>
+    async function initiateCall(vetId, vetName) {
+      const config = document.getElementById('vetListConfig');
+      const confirmText = config.dataset.confirmText || 'Start a video call with';
+      const failedText = config.dataset.failedText || 'Failed to initiate call. Please try again.';
+      const errorText = config.dataset.errorText || 'An error occurred. Please try again.';
+
+      const confirmed = confirm(`${confirmText} ${vetName}?`);
+      if (!confirmed) return;
+
+      // Show loading
+      document.getElementById('loadingModal').classList.remove('hidden');
+
+      try {
+        const response = await fetch(`/televet/call/initiate/${vetId}`, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+
+        const contentType = response.headers.get('content-type') || '';
+
+        if (response.ok && contentType.indexOf('application/json') !== -1) {
+          const data = await response.json();
+          if (data.success) {
+            window.location.href = `/televet/room/${data.roomId}`;
+            return;
+          }
+          alert(data.message || failedText);
+          document.getElementById('loadingModal').classList.add('hidden');
+        } else {
+          // Non-JSON or error HTML (likely redirect to login or server error)
+          const text = await response.text();
+          console.error('Unexpected response initiating call:', text);
+          alert(errorText);
+          document.getElementById('loadingModal').classList.add('hidden');
+        }
+      } catch (error) {
+        console.error('Error initiating call:', error);
+        alert(errorText);
+        document.getElementById('loadingModal').classList.add('hidden');
+      }
+    }
+  </script>
+</body>
+</html>

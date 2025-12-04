@@ -75,6 +75,8 @@ const stockRoutes = require('./routes/stockRoutes');
 const i18nRoutes = require('./routes/i18nRoutes');
 const adminRoutes = require('./routes/admin'); // Imported from first block
 const weatherroutes = require('./routes/weatherRoutes');
+const teleVetroutes=require('./routes/teleVetRoutes');
+
 // --- Route Definitions ---
 
 // Home route FIRST
@@ -98,6 +100,7 @@ app.use("/dealer-auth", dealerAuthRoutes);
 app.use("/stock", stockRoutes);
 app.use('/admin', adminRoutes);
 app.use('/weather',weatherroutes);
+app.use('/teleVet',teleVetroutes);
 
 // Debug endpoint to inspect active user -> socket mappings (temporary)
 const userSocketMap = {}; // { userId: socketId }
@@ -228,6 +231,173 @@ io.on("connection", (socket) => {
             console.error('[socket] updateMessage error', e);
         }
     });
+    const VideoCall = require('./models/VideoCall');
+const User = require('./models/User');
+const Vet = require('./models/Vet');
+
+// Store active rooms and their participants
+const televetRooms = {}; // { roomId: [socket.id, socket.id] }
+
+// Join TeleVet room
+socket.on('televet-join-room', async ({ roomId, userId, userName, userRole }) => {
+    try {
+        console.log(`[TeleVet] ${userName} (${userRole}) joining room: ${roomId}`);
+        
+        socket.join(roomId);
+        
+        // Initialize room if doesn't exist
+        if (!televetRooms[roomId]) {
+            televetRooms[roomId] = [];
+        }
+        
+        // Add socket to room
+        televetRooms[roomId].push({
+            socketId: socket.id,
+            userId,
+            userName,
+            userRole
+        });
+        
+        console.log(`[TeleVet] Room ${roomId} now has ${televetRooms[roomId].length} participants`);
+        
+        // Confirm to joining user that room is ready
+        socket.emit('televet-room-ready', { roomId, participants: televetRooms[roomId].length });
+        
+        // Notify others in room that user joined
+        socket.to(roomId).emit('televet-user-joined', {
+            userId,
+            userName,
+            userRole
+        });
+        
+        // Update call status to active if both parties present
+        if (televetRooms[roomId].length === 2) {
+            await VideoCall.findOneAndUpdate(
+                { roomId },
+                { status: 'active' }
+            );
+            // Notify both parties that call is now active with 2 participants
+            io.to(roomId).emit('televet-both-ready', { message: 'Both participants connected' });
+        }
+    } catch (error) {
+        console.error('[TeleVet] Error joining room:', error);
+        socket.emit('televet-error', { message: 'Failed to join room' });
+    }
+});
+
+// WebRTC Offer
+socket.on('televet-offer', ({ roomId, offer }) => {
+    try {
+        console.log(`[TeleVet] Relaying offer in room: ${roomId}`);
+        socket.to(roomId).emit('televet-offer', { offer });
+    } catch (error) {
+        console.error('[TeleVet] Error relaying offer:', error);
+    }
+});
+
+// WebRTC Answer
+socket.on('televet-answer', ({ roomId, answer }) => {
+    try {
+        console.log(`[TeleVet] Relaying answer in room: ${roomId}`);
+        socket.to(roomId).emit('televet-answer', { answer });
+    } catch (error) {
+        console.error('[TeleVet] Error relaying answer:', error);
+    }
+});
+
+// ICE Candidate
+socket.on('televet-ice-candidate', ({ roomId, candidate }) => {
+    try {
+        socket.to(roomId).emit('televet-ice-candidate', { candidate });
+    } catch (error) {
+        console.error('[TeleVet] Error relaying ICE candidate:', error);
+    }
+});
+
+// Leave room
+socket.on('televet-leave-room', async (roomId) => {
+    try {
+        console.log(`[TeleVet] User leaving room: ${roomId}`);
+        
+        socket.leave(roomId);
+        socket.to(roomId).emit('televet-user-left');
+        
+        // Remove from room tracking
+        if (televetRooms[roomId]) {
+            televetRooms[roomId] = televetRooms[roomId].filter(
+                p => p.socketId !== socket.id
+            );
+            
+            // Clean up empty rooms
+            if (televetRooms[roomId].length === 0) {
+                delete televetRooms[roomId];
+                
+                // Update call status to ended
+                await VideoCall.findOneAndUpdate(
+                    { roomId, status: 'active' },
+                    { 
+                        status: 'ended',
+                        endTime: new Date()
+                    }
+                );
+            }
+        }
+    } catch (error) {
+        console.error('[TeleVet] Error leaving room:', error);
+    }
+});
+
+// Notify vet of incoming call (called from route after call creation)
+// This function should be exported and called from your route
+async function notifyVetOfIncomingCall(io, vetId, callData) {
+    try {
+        // Find vet's socket
+        const vetSocketId = userSocketMap[vetId.toString()];
+        
+        if (vetSocketId) {
+            io.to(vetSocketId).emit('new-call-for-vet', {
+                callId: callData._id,
+                roomId: callData.roomId,
+                farmerId: callData.farmerId._id,
+                farmerName: callData.farmerId.name,
+                farmerImage: callData.farmerId.profileImage,
+                farmerLocation: `${callData.farmerId.village}, ${callData.farmerId.state}`,
+                timestamp: callData.createdAt
+            });
+            console.log(`[TeleVet] Notified vet ${vetId} of incoming call`);
+        } else {
+            console.log(`[TeleVet] Vet ${vetId} not connected to socket`);
+        }
+    } catch (error) {
+        console.error('[TeleVet] Error notifying vet:', error);
+    }
+}
+
+// Handle disconnect - clean up TeleVet rooms
+socket.on('disconnect', () => {
+    // ... existing disconnect code ...
+    
+    // Clean up TeleVet rooms
+    for (const [roomId, participants] of Object.entries(televetRooms)) {
+        const updatedParticipants = participants.filter(p => p.socketId !== socket.id);
+        
+        if (updatedParticipants.length !== participants.length) {
+            televetRooms[roomId] = updatedParticipants;
+            
+            // Notify others in room
+            io.to(roomId).emit('televet-user-left');
+            
+            // Clean up empty rooms
+            if (televetRooms[roomId].length === 0) {
+                delete televetRooms[roomId];
+                console.log(`[TeleVet] Room ${roomId} closed due to disconnect`);
+            }
+        }
+    }
+});
+
+// Export the notification function for use in routes
+module.exports = { notifyVetOfIncomingCall };
 
 });
 

@@ -1,128 +1,297 @@
-// routes/teleVetRoutes.js
+// routes/teleVetRoutes.js - UPDATED VERSION with socket notification
 const express = require("express");
 const router = express.Router();
 const Vet = require("../models/Vet");
 const User = require("../models/User");
+const VideoCall = require("../models/VideoCall");
 
-// ============================================
-// GET: VET DASHBOARD (for vets waiting for calls)
-// ============================================
-router.get('/doctor/dashboard', (req, res) => {
-  const vet = req.session.vet;
-  if (!vet) return res.redirect('/vet-auth/login');
-  
-  console.log('[teleVetRoutes] vet dashboard accessed by:', vet._id);
-  res.render('teleVet/vetDashboard', { vet });
-});
+// This will be set by app.js
+let io = null;
+let userSocketMap = null;
 
-// ============================================
-// GET: FARMER CALL PAGE (to initiate call to specific vet)
-// ============================================
-router.get('/farmer/call/:vetId', async (req, res) => {
+// Function to set socket.io instance
+router.setSocketIO = (socketIO, socketMap) => {
+  io = socketIO;
+  userSocketMap = socketMap;
+};
+
+// Helper to detect JSON/AJAX requests
+const isJsonRequest = (req) => {
   try {
-    const farmer = req.session.user;
-    if (!farmer) return res.redirect('/auth/login');
-    
-    const vet = await Vet.findById(req.params.vetId);
-    if (!vet) return res.status(404).render('error', { message: 'Vet not found' });
-    
-    console.log('[teleVetRoutes] farmer call page accessed:', {
-      farmerId: farmer._id,
-      farmerName: farmer.name,
-      vetId: vet._id,
-      vetName: vet.name
+    return req.xhr ||
+      (req.headers && req.headers.accept && req.headers.accept.indexOf('application/json') !== -1) ||
+      (req.get && req.get('X-Requested-With') === 'XMLHttpRequest');
+  } catch (e) {
+    return false;
+  }
+};
+
+// Middleware to check if farmer is logged in
+const isFarmerAuth = (req, res, next) => {
+  if (!req.session.user) {
+    if (isJsonRequest(req)) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    return res.redirect('/auth/login');
+  }
+  next();
+};
+
+// Middleware to check if vet is logged in
+const isVetAuth = (req, res, next) => {
+  if (!req.session.vet) {
+    if (isJsonRequest(req)) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    return res.redirect('/vet-auth/login');
+  }
+  next();
+};
+
+// ==================== FARMER ROUTES ====================
+
+// Show list of vets for farmer
+router.get("/", async (req, res) => {
+  try {
+    const vets = await Vet.find({}).select("-password");
+    res.render("televet/vet-list", {
+      vets,
+      farmer: req.session.user
     });
-    
-    res.render('teleVet/farmerCall', {
-      vet,
-      farmer
-      // roomId is generated in frontend (teleVetFarmerCall.js)
-    });
-  } catch (err) {
-    console.error('[teleVetRoutes] farmer call page error:', err);
-    res.status(500).render('error', { message: 'Server error' });
+  } catch (error) {
+    console.error("Error fetching vets:", error);
+    res.status(500).send("Error loading vets");
   }
 });
 
-// ============================================
-// GET: DOCTOR CALL PAGE (after accepting call from farmer)
-// ============================================
-router.get('/doctor/call', async (req, res) => {
+// Initiate call from farmer to vet - UPDATED WITH SOCKET NOTIFICATION
+router.post("/call/initiate/:vetId", isFarmerAuth, async (req, res) => {
   try {
-    const vet = req.session.vet;
-    if (!vet) return res.redirect('/vet-auth/login');
-    
-    const { roomId, farmerId } = req.query;
-    
-    // Validate roomId format
-    if (!roomId || !roomId.includes('vetroom_')) {
-      console.warn('[teleVetRoutes] invalid roomId:', roomId);
-      return res.status(400).render('error', { message: 'Invalid room ID' });
+    const { vetId } = req.params;
+    const farmerId = req.session.user._id;
+
+    // Check if vet exists
+    const vet = await Vet.findById(vetId);
+    if (!vet) {
+      return res.status(404).json({ success: false, message: "Vet not found" });
     }
-    
-    // Validate farmerId and fetch farmer
-    if (!farmerId) {
-      console.warn('[teleVetRoutes] missing farmerId');
-      return res.status(400).render('error', { message: 'Farmer ID required' });
-    }
-    
+
+    // Check if farmer exists
     const farmer = await User.findById(farmerId);
     if (!farmer) {
-      console.warn('[teleVetRoutes] farmer not found:', farmerId);
-      return res.status(404).render('error', { message: 'Farmer not found' });
+      return res.status(404).json({ success: false, message: "Farmer not found" });
     }
-    
-    console.log('[teleVetRoutes] doctor call page accessed:', {
-      vetId: vet._id,
-      vetName: vet.name,
-      farmerId: farmer._id,
-      farmerName: farmer.name,
-      roomId
+
+    // Create unique room ID
+    const roomId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Create video call record
+    const videoCall = await VideoCall.create({
+      roomId,
+      farmerId,
+      vetId,
+      status: "pending"
     });
-    
-    res.render('teleVet/doctorCall', {
-      vet,
-      farmer,
-      roomId
+
+    // Populate farmer data for notification
+    const populatedCall = await VideoCall.findById(videoCall._id)
+      .populate("farmerId", "name village state profileImage");
+
+    // Notify vet via socket if online
+    if (io && userSocketMap) {
+      const vetSocketId = userSocketMap[vetId.toString()];
+      
+      if (vetSocketId) {
+        io.to(vetSocketId).emit('new-call-for-vet', {
+          callId: populatedCall._id,
+          roomId: populatedCall.roomId,
+          farmerId: populatedCall.farmerId._id,
+          farmerName: populatedCall.farmerId.name,
+          farmerImage: populatedCall.farmerId.profileImage,
+          farmerLocation: `${populatedCall.farmerId.village || ''}, ${populatedCall.farmerId.state || ''}`,
+          timestamp: populatedCall.createdAt
+        });
+        console.log(`[TeleVet] Notified vet ${vetId} of incoming call`);
+      } else {
+        console.log(`[TeleVet] Vet ${vetId} not connected to socket`);
+      }
+    }
+
+    res.json({
+      success: true,
+      roomId: videoCall.roomId,
+      callId: videoCall._id,
+      vetName: vet.name
     });
-  } catch (err) {
-    console.error('[teleVetRoutes] doctor call page error:', err);
-    res.status(500).render('error', { message: 'Server error' });
+  } catch (error) {
+    console.error("Error initiating call:", error);
+    res.status(500).json({ success: false, message: "Failed to initiate call" });
   }
 });
 
-// ============================================
-// GET: VET LIST (for farmers to browse and select vet)
-// ============================================
-router.get('/', async (req, res) => {
+// ==================== VET ROUTES ====================
+
+// Vet dashboard - shows pending calls
+router.get("/vet/dashboard", isVetAuth, async (req, res) => {
   try {
-    const farmer = req.session.user;
-    const vets = await Vet.find().select('_id name specialization profileImage').lean();
-    
-    console.log('[teleVetRoutes] vet list accessed, found:', vets.length);
-    res.render('teleVet/vetList', { vets, farmer });
-  } catch (err) {
-    console.error('[teleVetRoutes] vet list error:', err);
-    res.status(500).render('error', { message: 'Server error' });
+    const vetId = req.session.vet._id;
+
+    // Get pending calls
+    const pendingCalls = await VideoCall.find({
+      vetId,
+      status: "pending"
+    })
+      .populate("farmerId", "name village state profileImage")
+      .sort({ createdAt: -1 });
+
+    // Get recent call history
+    const callHistory = await VideoCall.find({
+      vetId,
+      status: { $in: ["ended", "rejected"] }
+    })
+      .populate("farmerId", "name village state profileImage")
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    res.render("televet/vet-dashboard", {
+      vet: req.session.vet,
+      pendingCalls,
+      callHistory
+    });
+  } catch (error) {
+    console.error("Error loading vet dashboard:", error);
+    res.status(500).send("Error loading dashboard");
   }
 });
 
-// ============================================
-// GET: VET PROFILE (view vet details before calling)
-// ============================================
-router.get('/:vetId', async (req, res) => {
+// Accept call
+router.post("/call/accept/:callId", isVetAuth, async (req, res) => {
   try {
-    const farmer = req.session.user;
-    if (!farmer) return res.redirect('/auth/login');
-    
-    const vet = await Vet.findById(req.params.vetId);
-    if (!vet) return res.status(404).render('error', { message: 'Vet not found' });
-    
-    console.log('[teleVetRoutes] vet profile accessed:', vet._id);
-    res.render('teleVet/vetProfile', { vet, farmer });
-  } catch (err) {
-    console.error('[teleVetRoutes] vet profile error:', err);
-    res.status(500).render('error', { message: 'Server error' });
+    const { callId } = req.params;
+    const vetId = req.session.vet._id;
+
+    const call = await VideoCall.findOne({ _id: callId, vetId });
+    if (!call) {
+      return res.status(404).json({ success: false, message: "Call not found" });
+    }
+
+    call.status = "accepted";
+    call.acceptedAt = new Date();
+    await call.save();
+
+    // Notify farmer that call was accepted (optional)
+    if (io && userSocketMap) {
+      const farmerSocketId = userSocketMap[call.farmerId.toString()];
+      if (farmerSocketId) {
+        io.to(farmerSocketId).emit('call-accepted', {
+          callId: call._id,
+          roomId: call.roomId,
+          vetName: req.session.vet.name
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      roomId: call.roomId
+    });
+  } catch (error) {
+    console.error("Error accepting call:", error);
+    res.status(500).json({ success: false, message: "Failed to accept call" });
+  }
+});
+
+// Reject call
+router.post("/call/reject/:callId", isVetAuth, async (req, res) => {
+  try {
+    const { callId } = req.params;
+    const vetId = req.session.vet._id;
+
+    const call = await VideoCall.findOne({ _id: callId, vetId });
+    if (!call) {
+      return res.status(404).json({ success: false, message: "Call not found" });
+    }
+
+    call.status = "rejected";
+    call.endTime = new Date();
+    await call.save();
+
+    // Notify farmer that call was rejected (optional)
+    if (io && userSocketMap) {
+      const farmerSocketId = userSocketMap[call.farmerId.toString()];
+      if (farmerSocketId) {
+        io.to(farmerSocketId).emit('call-rejected', {
+          callId: call._id,
+          message: 'The veterinarian is not available'
+        });
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error rejecting call:", error);
+    res.status(500).json({ success: false, message: "Failed to reject call" });
+  }
+});
+
+// ==================== CALL ROOM ====================
+
+// Video call room (for both farmer and vet)
+router.get("/room/:roomId", async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const user = req.session.user || req.session.vet;
+
+    if (!user) {
+      return res.redirect("/auth/login");
+    }
+
+    // Find the call
+    const call = await VideoCall.findOne({ roomId })
+      .populate("farmerId", "name profileImage village state")
+      .populate("vetId", "name specialization phone");
+
+    if (!call) {
+      return res.status(404).send("Call not found");
+    }
+
+    // Determine user role
+    const userRole = req.session.user ? "farmer" : "vet";
+    const userName = req.session.user ? req.session.user.name : req.session.vet.name;
+    const userId = req.session.user ? req.session.user._id : req.session.vet._id;
+
+    res.render("televet/call-room", {
+      roomId,
+      call,
+      userRole,
+      userName,
+      userId,
+      user
+    });
+  } catch (error) {
+    console.error("Error loading call room:", error);
+    res.status(500).send("Error loading call room");
+  }
+});
+
+// End call
+router.post("/call/end/:roomId", async (req, res) => {
+  try {
+    const { roomId } = req.params;
+
+    const call = await VideoCall.findOne({ roomId });
+    if (!call) {
+      return res.status(404).json({ success: false, message: "Call not found" });
+    }
+
+    call.status = "ended";
+    call.endTime = new Date();
+    await call.save();
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error ending call:", error);
+    res.status(500).json({ success: false, message: "Failed to end call" });
   }
 });
 

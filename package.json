@@ -37,7 +37,8 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^4.1.17",
-    "twilio": "^5.10.7"
+    "twilio": "^5.10.7",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
