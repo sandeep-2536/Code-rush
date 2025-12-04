@@ -4,9 +4,9 @@ const app = express();
 require("dotenv").config();
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
+const i18n = require("i18n"); // Included from the second block for i18n
 const port = process.env.PORT || 3000;
 const cookieParser = require("cookie-parser");
-
 
 const session = require("express-session");
 const connectDB = require("./config/db");
@@ -14,7 +14,7 @@ const connectDB = require("./config/db");
 // ✨ Connect to MongoDB
 connectDB();
 
-// Middlewares
+// --- Middlewares ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -28,19 +28,32 @@ app.use(session({
     saveUninitialized: true
 }));
 
-// Expose logged-in user (from session) to all views as user
+// --- Internationalization (i18n) Configuration ---
+i18n.configure({
+    locales: ["en", "hi", "kn"],
+    directory: __dirname + "/locales",
+    cookie: "aarohi_lang",
+    defaultLocale: "en",
+    autoReload: true,
+    updateFiles: false
+});
+app.use(i18n.init); // Initialize i18n
+
+// Expose logged-in user (from session) to all views as `user`
 app.use((req, res, next) => {
     res.locals.user = req.session && req.session.user ? req.session.user : null;
     next();
 });
 
-// Expose user language preference to all views
+// Expose user language preference and translation function to all views
 app.use((req, res, next) => {
-  res.locals.userLang = req.cookies?.aarohi_lang || "en";
-  next();
+    res.locals.__ = res.__; // Translation function
+    res.locals.userLang = req.cookies?.aarohi_lang || "en";
+    res.locals.lang = res.locals.userLang; // Alias for templates
+    next();
 });
 
-// Routes
+// --- Routes Imports ---
 const aiRoutes = require('./routes/aiRoutes');
 const authRoutes = require("./routes/authRoutes");
 const schemeRoutes = require('./routes/schemeRoutes');
@@ -56,18 +69,19 @@ const vetAuthRoutes = require("./routes/vetAuthRoutes");
 const teleVetRoutes = require("./routes/teleVetRoutes");
 const dealerAuthRoutes = require('./routes/dealerAuthRoutes');
 const stockRoutes = require('./routes/stockRoutes');
-const adminRoutes = require('./routes/admin');
+const i18nRoutes = require('./routes/i18nRoutes');
+const adminRoutes = require('./routes/admin'); // Imported from first block
 
-// Home route FIRST (to avoid conflict)
+// --- Route Definitions ---
+
+// Home route FIRST
 app.get('/', (req, res) => {
     res.render('home/home');
 });
 
-// Clean route structure
-app.use("/lang", require("./routes/langRoutes"));
-
 app.use("/auth", authRoutes);
 app.use("/ai", aiRoutes);
+app.use('/i18n', i18nRoutes); // For changing language
 app.use("/schemes", schemeRoutes);
 app.use('/farmer', farmerRoutes);
 app.use("/community", communityRoutes);
@@ -81,9 +95,11 @@ app.use("/vet-auth", vetAuthRoutes);
 app.use("/teleVet", teleVetRoutes);
 app.use("/dealer-auth", dealerAuthRoutes);
 app.use("/stock", stockRoutes);
-app.use('/admin', adminRoutes);
+app.use('/admin', adminRoutes); // Admin Portal Route
 
 // Debug endpoint to inspect active user -> socket mappings (temporary)
+const userSocketMap = {}; // { userId: socketId }
+
 app.get('/debug/sockets', (req, res) => {
     try {
         res.json(userSocketMap);
@@ -93,8 +109,7 @@ app.get('/debug/sockets', (req, res) => {
 });
 
 
-// Map users to sockets (top-level so it persists across connections)
-const userSocketMap = {}; // { userId: socketId }
+// --- Socket.IO Handlers ---
 
 io.on("connection", (socket) => {
 
@@ -140,7 +155,7 @@ io.on("connection", (socket) => {
         }
     });
 
-
+    // WebRTC/Video Call Signaling
     socket.on("joinRoom", (roomId) => {
         try {
             socket.join(roomId);
@@ -185,8 +200,8 @@ io.on("connection", (socket) => {
     });
 
     // Chat message handlers
-    const Message = require('./models/Message');
-    const User = require('./models/User');
+    const Message = require('./models/Message'); // Assumes path to model
+    // const User = require('./models/User'); // User model is not used directly here, but needed for population
 
     socket.on('joinRoom', async ({ roomId }) => {
         try {
@@ -246,7 +261,8 @@ io.on("connection", (socket) => {
 
     socket.on('updateMessage', async (payload) => {
         try {
-            const updated = await Message.findByIdAndUpdate(msgId._id, {
+            // Note: The original code used msgId._id which looked like a typo. Assuming payload._id contains the message ID.
+            const updated = await Message.findByIdAndUpdate(payload._id, {
                 text: payload.text,
                 edited: true
             }, { new: true }).populate('user');
@@ -271,20 +287,20 @@ io.on("connection", (socket) => {
 
 });
 
+// --- Server Startup ---
 
-
-// // Add error handler so EADDRINUSE is reported cleanly on Windows
-// http.on('error', (err) => {
-//     if (err && err.code === 'EADDRINUSE') {
-//         console.error(🚫 Port ${port} is already in use. Choose a different PORT in your .env or stop the process using the port.);
-//         console.error('To find and stop the process on Windows (PowerShell):');
-//         console.error('  netstat -ano | findstr :<PORT>');
-//         console.error('  taskkill /PID <PID> /F');
-//         process.exit(1);
-//     }
-//     console.error('Server error:', err);
-//     process.exit(1);
-// });
+// Add error handler so EADDRINUSE is reported cleanly on Windows
+http.on('error', (err) => {
+    if (err && err.code === 'EADDRINUSE') {
+        console.error(`🚫 Port ${port} is already in use. Choose a different PORT in your .env or stop the process using the port.`);
+        console.error('To find and stop the process on Windows (PowerShell):');
+        console.error('  netstat -ano | findstr :<PORT>');
+        console.error('  taskkill /PID <PID> /F');
+        process.exit(1);
+    }
+    console.error('Server error:', err);
+    process.exit(1);
+});
 
 http.listen(port, () => {
     console.log("🚀 Socket.IO + Server running on", port);
