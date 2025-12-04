@@ -1,8 +1,11 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const dashboardController = require("../controllers/dashboardController");
+const dashboardController = require('../controllers/dashboardController');
 
-router.get("/", dashboardController.getDashboard);
-router.post("/saveLocation", dashboardController.saveLocation);
+// Main dashboard route
+router.get('/', dashboardController.getDashboard);
+
+// Save location endpoint (called from dashboard modal)
+router.post('/saveLocation', dashboardController.saveLocation);
 
 module.exports = router;

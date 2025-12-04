@@ -11,8 +11,6 @@
     <!-- Header -->
     <%- include("../layouts/header") %>
 
-    <!-- Hero Section -->
-    <!-- Hero Section with Background Image -->
     <!-- Hero Section with Background Image -->
     <section class="relative overflow-hidden py-20 px-4" style="background-image: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url('home_bg.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; min-height: 600px; display: flex; align-items: center; justify-content: center;">
         <div class="max-w-6xl mx-auto text-center">
@@ -59,7 +57,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
             <!-- Government Schemes -->
-            <div onclick="window.location.href='/schemes'" class="feature-card">
+            <div onclick="window.location.href='/schemes'" class="feature-card cursor-pointer">
                 <div class="flex flex-col items-center text-center">
                     <div class="bg-linear-to-br from-green-500 to-green-600 p-6 rounded-2xl mb-4 shadow-lg">
                         <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -73,7 +71,7 @@
             </div>
 
             <!-- AI Assistant -->
-            <div onclick="window.location.href='/ai/assistant'" class="feature-card">
+            <div onclick="window.location.href='/ai/assistant'" class="feature-card cursor-pointer">
                 <div class="flex flex-col items-center text-center">
                     <div class="bg-linear-to-br from-blue-500 to-blue-600 p-6 rounded-2xl mb-4 shadow-lg">
                         <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -86,7 +84,7 @@
             </div>
 
             <!-- Community -->
-            <div onclick="window.location.href='/community'" class="feature-card">
+            <div onclick="window.location.href='/community'" class="feature-card cursor-pointer">
                 <div class="flex flex-col items-center text-center">
                     <div class="bg-linear-to-br from-purple-500 to-purple-600 p-6 rounded-2xl mb-4 shadow-lg">
                         <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -99,7 +97,7 @@
             </div>
 
             <!-- Livestock -->
-            <div onclick="window.location.href='/animals'" class="feature-card">
+            <div onclick="window.location.href='/animals'" class="feature-card cursor-pointer">
                 <div class="flex flex-col items-center text-center">
                     <div class="bg-linear-to-br from-orange-500 to-orange-600 p-6 rounded-2xl mb-4 shadow-lg">
                         <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -114,7 +112,7 @@
             </div>
 
             <!-- Sell Crops -->
-            <div onclick="window.location.href='/crops'" class="feature-card">
+            <div onclick="window.location.href='/crops'" class="feature-card cursor-pointer">
                 <div class="flex flex-col items-center text-center">
                     <div class="bg-linear-to-br from-yellow-500 to-yellow-600 p-6 rounded-2xl mb-4 shadow-lg">
                         <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -126,7 +124,8 @@
                 </div>
             </div>
 
-              <div onclick="window.location.href='/teleVet'" class="feature-card">
+            <!-- Vet Support -->
+            <div onclick="window.location.href='/teleVet'" class="feature-card cursor-pointer">
                 <div class="flex flex-col items-center text-center">
                     <div class="bg-linear-to-br from-red-500 to-red-600 p-6 rounded-2xl mb-4 shadow-lg">
                         <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -139,7 +138,7 @@
             </div>
 
             <!-- Find Stock -->
-            <div onclick="window.location.href='/stock'" class="feature-card">
+            <div onclick="window.location.href='/stock'" class="feature-card cursor-pointer">
                 <div class="flex flex-col items-center text-center">
                     <div class="bg-linear-to-br from-teal-500 to-teal-600 p-6 rounded-2xl mb-4 shadow-lg">
                         <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -151,8 +150,8 @@
                 </div>
             </div>
 
-            <!-- Weather (Coming Soon) -->
-            <div class="feature-card opacity-60 cursor-not-allowed">
+            <!-- Weather Updates - NOW WORKING! -->
+            <div onclick="window.location.href='/weather'" class="feature-card cursor-pointer">
                 <div class="flex flex-col items-center text-center">
                     <div class="bg-linear-to-br from-cyan-500 to-cyan-600 p-6 rounded-2xl mb-4 shadow-lg">
                         <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -160,7 +159,7 @@
                         </svg>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-2" data-i18n="home.featWeather">Weather Updates</h3>
-                    <p class="text-gray-600" data-i18n="home.featWeatherSub">Coming Soon</p>
+                    <p class="text-gray-600" data-i18n="home.featWeatherSub">Live Forecast</p>
                 </div>
             </div>
 
@@ -187,24 +186,6 @@
 
     <!-- Voice Command Script -->
     <script>
-    // // Set CTA button behavior based on user login status
-    // (function() {
-    //     var ctaBtn = document.getElementById('ctaButton');
-    //     if (!ctaBtn) return;
-        
-    //     <%_ if (user) { _%>
-    //     ctaBtn.textContent = 'Go to Dashboard';
-    //     ctaBtn.onclick = function() {
-    //         window.location.href = '/dashboard';
-    //     };
-    //     <%_ } else { _%>
-    //     ctaBtn.textContent = 'Get Started Free';
-    //     ctaBtn.onclick = function() {
-    //         window.location.href = '/auth/login';
-    //     };
-    //     <%_ } _%>
-    // })();
-
     function startVoiceCommand() {
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -227,6 +208,8 @@
                     window.location.href = '/teleVet';
                 } else if (transcript.includes('stock')) {
                     window.location.href = '/stock';
+                } else if (transcript.includes('weather')) {
+                    window.location.href = '/weather';
                 } else {
                     localStorage.setItem('voiceQuery', transcript);
                     window.location.href = '/ai/assistant';
