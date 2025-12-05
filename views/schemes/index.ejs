@@ -145,15 +145,23 @@
                 </p>
                 
                 <div class="flex gap-3 mt-auto">
-                    <button onclick="showSchemeDetails('<%= scheme.name %>', '<%= scheme.desc %>', '<%= scheme.state %>')" 
-                            class="flex-1 py-3 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 transition">
-                        View Details
-                    </button>
-                    <button onclick="applyScheme('<%= scheme.name %>')" 
-                            class="flex-1 btn-gold py-3 rounded-xl font-bold text-sm text-white transition">
-                        Apply Now
-                    </button>
-                </div>
+
+    <!-- VIEW DETAILS -->
+    <a href="https://pmkisan.gov.in/homenew.aspx"
+       target="_blank"
+       class="flex-1 py-3 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 transition flex items-center justify-center">
+        View Details
+    </a>
+
+    <!-- APPLY NOW -->
+    <a href="https://pmkisan.gov.in/RegistrationFormupdated.aspx"
+       target="_blank"
+       class="flex-1 btn-gold py-3 rounded-xl font-bold text-sm text-white transition flex items-center justify-center">
+        Apply Now
+    </a>
+
+</div>
+
             </div>
             <% }) %>
 
