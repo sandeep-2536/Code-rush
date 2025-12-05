@@ -3,295 +3,334 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="schemes.page_title">Government Schemes - Aarohi Agriculture</title>
+    <title data-i18n="schemes.page_title">Farmer Schemes - Aarohi Agriculture</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Poppins', sans-serif; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: #f0fdf4; /* Light Mint Green */
+            /* Subtle Leaf Pattern Background */
+            background-image: radial-gradient(#dcfce7 2px, transparent 2px);
+            background-size: 32px 32px;
+        }
 
-        /* Power Animation: Slide Up with a Snap */
-        @keyframes powerSlide {
-            0% { opacity: 0; transform: translateY(40px) scale(0.9); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+        /* --- Unique Farmer Animations --- */
+
+        /* 1. Sprout Animation: Cards grow from the bottom */
+        @keyframes sprout {
+            0% { 
+                opacity: 0; 
+                transform: translateY(50px) scale(0.8); 
+            }
+            60% {
+                transform: translateY(-10px) scale(1.02);
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+
+        /* 2. Breeze Animation: Gentle sway on hover */
+        @keyframes breeze {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(1deg); }
+            75% { transform: rotate(-1deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* 3. Photosynthesis Pulse: For main buttons */
+        @keyframes photosynthesis {
+            0% { box-shadow: 0 0 0 0 rgba(21, 128, 61, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(21, 128, 61, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(21, 128, 61, 0); }
         }
 
         .scheme-card {
-            animation: powerSlide 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: sprout 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             opacity: 0;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            transform-origin: bottom center;
         }
-        
+
         .scheme-card:hover {
-            transform: translateY(-5px);
+            animation: breeze 2s ease-in-out infinite;
+            border-color: #15803d; /* Green-700 */
         }
-        
+
+        /* Staggered delays for the "Field of Crops" effect */
         .scheme-card:nth-child(1) { animation-delay: 0.1s; }
         .scheme-card:nth-child(2) { animation-delay: 0.2s; }
         .scheme-card:nth-child(3) { animation-delay: 0.3s; }
         .scheme-card:nth-child(4) { animation-delay: 0.4s; }
+        .scheme-card:nth-child(5) { animation-delay: 0.5s; }
 
-        /* "Shine" Effect on Hover - The "Fiery" Creativity */
-        .shine-effect {
-            position: relative;
-            overflow: hidden;
+        /* Farmer Buttons */
+        .btn-harvest {
+            background: linear-gradient(to bottom, #f59e0b, #d97706);
+            border-bottom: 4px solid #b45309; /* Tactile clicky feel */
+            transition: all 0.1s;
         }
-        .shine-effect::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 50%;
-            height: 100%;
-            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
-            transform: skewX(-25deg);
-            transition: none;
-        }
-        .shine-effect:hover::after {
-            animation: shine 0.75s;
-        }
-        @keyframes shine {
-            100% { left: 125%; }
+        .btn-harvest:active {
+            transform: translateY(4px);
+            border-bottom: 0px solid transparent;
         }
 
-        /* Gold Button */
-        .btn-gold {
-            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
-            box-shadow: 0 4px 10px rgba(217, 119, 6, 0.3);
+        .btn-leaf {
+            background: linear-gradient(to bottom, #22c55e, #16a34a);
+            border-bottom: 4px solid #15803d;
+            transition: all 0.1s;
         }
-        .btn-gold:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(217, 119, 6, 0.5);
+        .btn-leaf:active {
+            transform: translateY(4px);
+            border-bottom: 0px solid transparent;
         }
 
-        /* Active Filter Pill */
-        .filter-btn.active {
-            background-color: #15803d; /* Green-700 */
-            color: white;
-            border-color: #15803d;
-            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+        /* Organic Shapes */
+        .leaf-shape {
+            border-radius: 2rem 0 2rem 0;
+        }
+        .seed-shape {
+            border-radius: 50% 50% 50% 0;
         }
         
-        /* Voice button pulse animation */
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-            50% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
-        }
-        
-        .voice-btn-active {
-            animation: pulse-glow 2s infinite;
-        }
-        
-        /* Scheme voice button */
-        .speak-btn {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 0.375rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-        }
-        
-        .speak-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+        /* Floating Dock Animation */
+        @keyframes slideUpFade {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen pb-20 selection:bg-green-200 selection:text-green-900">
+<body class="text-green-900 overflow-x-hidden">
 
     <%- include("../layouts/header") %>
 
-    <section class="relative bg-linear-to-r from-green-800 via-green-700 to-emerald-600 py-16 px-4 mb-12 shadow-2xl rounded-b-[40px]">
-        <div class="max-w-6xl mx-auto text-center relative z-10">
-            <div class="inline-block bg-white/20 backdrop-blur-md rounded-full px-4 py-1 mb-4 border border-white/30 animate-bounce">
-                <span class="text-yellow-300 font-bold text-sm tracking-wider">⚡ POWERED BY GOVT</span>
-            </div>
+    <section class="relative bg-gradient-to-b from-green-800 to-green-600 pt-24 pb-32 rounded-b-[60px] shadow-xl overflow-hidden">
+        
+        <div class="absolute top-0 right-0 w-64 h-64 bg-yellow-400 rounded-full mix-blend-overlay filter blur-3xl opacity-30 translate-x-1/3 -translate-y-1/3"></div>
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-emerald-400 rounded-full mix-blend-overlay filter blur-3xl opacity-20 -translate-x-1/3 translate-y-1/3"></div>
+
+        <div class="max-w-7xl mx-auto px-4 text-center relative z-10">
             
-            <!-- Language and Voice Controls -->
-            <div class="flex justify-center gap-3 mb-6 flex-wrap">
-                <select id="langSelect" onchange="changeLanguage(this.value)" class="px-4 py-2 rounded-full bg-white/90 text-gray-800 font-bold cursor-pointer border border-white/50">
+            <div class="inline-flex flex-wrap items-center justify-center gap-3 bg-green-900/40 backdrop-blur-md p-2 rounded-full border border-green-400/30 mb-8 shadow-lg">
+                <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-green-100 text-green-900 font-bold rounded-full px-4 py-2 border-none focus:ring-2 focus:ring-yellow-400 cursor-pointer">
                     <option value="en">English</option>
-                    <option value="hi">हिंदी (Hindi)</option>
-                    <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                    <option value="hi">हिंदी</option>
+                    <option value="kn">ಕನ್ನಡ</option>
                 </select>
-                <button onclick="toggleVoiceFeature()" id="voiceToggleBtn" class="px-4 py-2 rounded-full bg-green-500 text-white font-bold hover:bg-green-600 transition">
-                    🔊 Voice On
+                
+                <button onclick="toggleVoiceFeature()" id="voiceToggleBtn" class="flex items-center gap-2 px-5 py-2 rounded-full bg-yellow-400 text-yellow-900 font-bold hover:bg-yellow-300 transition-colors shadow-sm">
+                    <span>🔊</span> <span>Voice Mode</span>
                 </button>
             </div>
-            
+
             <h1 class="text-4xl md:text-6xl font-extrabold text-white mb-4 tracking-tight drop-shadow-md">
-                Schemes & Subsidies
+                Government <span class="text-yellow-300 underline decoration-wavy decoration-green-500">Schemes</span>
             </h1>
             <p class="text-xl text-green-100 font-medium max-w-2xl mx-auto">
-                Direct benefits for your farm growth.
+                Simple subsidies and loans to help your harvest grow.
             </p>
         </div>
-        
-        <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-yellow-400 rounded-full mix-blend-overlay filter blur-3xl opacity-20"></div>
     </section>
 
-    <section class="px-4 max-w-7xl mx-auto -mt-16 relative z-20">
+    <section class="max-w-7xl mx-auto px-4 -mt-20 relative z-20 pb-20">
         
-        <div class="max-w-2xl mx-auto mb-10">
-            <div class="bg-white p-2 rounded-full shadow-2xl flex items-center border border-gray-100 transform hover:scale-105 transition-transform duration-300">
-                <div class="p-3 bg-green-100 rounded-full text-green-700 ml-1">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <div class="bg-white p-4 rounded-3xl shadow-xl mb-10 border-b-8 border-green-200">
+            <div class="flex flex-col md:flex-row gap-4 items-center">
+                <div class="relative w-full md:w-1/2">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                    <input type="text" id="schemeSearch" onkeyup="filterSchemes(document.querySelector('.filter-btn.active').dataset.filter)"
+                           class="block w-full pl-12 pr-4 py-4 rounded-2xl bg-green-50 border-2 border-green-100 text-green-900 placeholder-green-400 focus:outline-none focus:border-green-500 focus:bg-white transition-all text-lg font-semibold" 
+                           placeholder="Search (e.g., Tractor, Seeds)...">
                 </div>
-                <input 
-                    type="text" 
-                    id="schemeSearch"
-                    placeholder="Search (e.g., 'Tractor', 'Loan')..."
-                    class="w-full bg-transparent px-4 text-gray-800 placeholder-gray-400 focus:outline-none text-lg font-bold"
-                    onkeyup="filterSchemes(document.querySelector('.filter-btn.active').dataset.filter)"
-                >
+
+                <div class="flex overflow-x-auto w-full md:w-1/2 gap-2 pb-2 md:pb-0 no-scrollbar">
+                    <button onclick="filterSchemes('all')" class="filter-btn active whitespace-nowrap px-5 py-3 rounded-xl font-bold bg-green-100 text-green-800 border-2 border-transparent hover:border-green-300 transition-all flex-1" data-filter="all">All</button>
+                    <button onclick="filterSchemes('All India')" class="filter-btn whitespace-nowrap px-5 py-3 rounded-xl font-bold bg-white text-gray-600 border-2 border-gray-100 hover:border-green-200 transition-all flex-1" data-filter="All India">🇮🇳 Central</button>
+                    <button onclick="filterSchemes('Karnataka')" class="filter-btn whitespace-nowrap px-5 py-3 rounded-xl font-bold bg-white text-gray-600 border-2 border-gray-100 hover:border-green-200 transition-all flex-1" data-filter="Karnataka">🚜 State</button>
+                </div>
             </div>
         </div>
 
-        <div class="flex flex-wrap gap-3 justify-center mb-10">
-            <button onclick="filterSchemes('all')" class="filter-btn active px-6 py-2 rounded-full bg-white border border-gray-200 text-gray-600 font-bold hover:bg-green-50 transition" data-filter="all">All</button>
-            <button onclick="filterSchemes('All India')" class="filter-btn px-6 py-2 rounded-full bg-white border border-gray-200 text-gray-600 font-bold hover:bg-green-50 transition" data-filter="All India">🇮🇳 Central</button>
-            <button onclick="filterSchemes('Karnataka')" class="filter-btn px-6 py-2 rounded-full bg-white border border-gray-200 text-gray-600 font-bold hover:bg-green-50 transition" data-filter="Karnataka">State</button>
-            <button onclick="filterSchemes('Income Support')" class="filter-btn px-6 py-2 rounded-full bg-white border border-gray-200 text-gray-600 font-bold hover:bg-green-50 transition" data-filter="Income Support">💰 Money</button>
-            <button onclick="SchemeVoice.readAllSchemes()" class="px-6 py-2 rounded-full bg-green-600 text-white font-bold hover:bg-green-700 transition" title="Read all schemes">🔊 Read All</button>
-        </div>
-
-        <div id="schemesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
+        <div id="schemesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <% schemes.forEach(scheme => { %>
-            <div class="scheme-card shine-effect bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 border-b-4 border-green-600 cursor-default" 
+            <div class="scheme-card bg-white rounded-[2rem] p-6 shadow-lg border-2 border-green-50 border-b-[8px] border-b-green-600/20 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group"
                  data-state="<%= scheme.state %>" 
                  data-type="<%= scheme.type %>"
                  data-name="<%= scheme.name.toLowerCase() %>">
                 
-                <div class="flex justify-between items-start mb-5">
-                    <div class="w-14 h-14 rounded-full bg-linear-to-b from-yellow-300 to-yellow-500 flex items-center justify-center shadow-md border-4 border-white">
-                        <span class="text-yellow-900 text-2xl font-black"><%= scheme.name.charAt(0) %></span>
+                <div class="relative z-10">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-16 h-16 seed-shape bg-gradient-to-br from-yellow-300 to-yellow-500 flex items-center justify-center shadow-md text-yellow-900 border-2 border-white">
+                            <span class="text-3xl font-black"><%= scheme.name.charAt(0) %></span>
+                        </div>
+                        
+                        <div class="text-right">
+                             <span class="inline-block px-3 py-1 rounded-lg bg-green-100 text-green-800 text-xs font-bold uppercase tracking-wider mb-1">
+                                <%= scheme.type %>
+                             </span>
+                             <br>
+                             <% if(scheme.state === 'All India') { %>
+                                <span class="text-xs font-bold text-blue-600">Central Govt</span>
+                             <% } else { %>
+                                <span class="text-xs font-bold text-purple-600"><%= scheme.state %></span>
+                             <% } %>
+                        </div>
                     </div>
 
-                    <div class="flex flex-col items-end gap-1">
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-green-700 bg-green-100 px-2 py-1 rounded-md"><%= scheme.type %></span>
-                        <% if(scheme.state === 'All India' || scheme.state === 'अखिल भारतीय' || scheme.state === 'ಅಖಿಲ ಭಾರತ') { %>
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-blue-700 bg-blue-100 px-2 py-1 rounded-md">Central</span>
-                        <% } else { %>
-                             <span class="text-[10px] font-bold uppercase tracking-widest text-gray-600 bg-gray-100 px-2 py-1 rounded-md"><%= scheme.state %></span>
-                        <% } %>
+                    <h3 class="text-2xl font-extrabold text-green-900 mb-2 leading-tight">
+                        <%= scheme.name %>
+                    </h3>
+                    
+                    <p class="text-gray-600 mb-6 font-medium leading-relaxed">
+                        <%= scheme.desc %>
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="SchemeVoice.speakScheme('<%= scheme.name %>', '<%= scheme.desc %>')" 
+                                class="btn-leaf col-span-2 py-3 rounded-xl text-white font-bold flex items-center justify-center gap-2 shadow-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                            Listen
+                        </button>
+                        
+                        <a href="https://pmkisan.gov.in/homenew.aspx" target="_blank"
+                           class="bg-green-50 text-green-700 border-2 border-green-200 py-3 rounded-xl font-bold flex items-center justify-center hover:bg-green-100 transition">
+                           Details
+                        </a>
+                        
+                        <a href="https://pmkisan.gov.in/RegistrationFormupdated.aspx" target="_blank"
+                           class="btn-harvest text-white py-3 rounded-xl font-bold flex items-center justify-center shadow-lg">
+                           Apply ➜
+                        </a>
                     </div>
                 </div>
 
-                <h3 class="text-xl font-extrabold text-gray-800 mb-2 leading-tight group-hover:text-green-700 transition-colors">
-                    <%= scheme.name %>
-                </h3>
-                
-                <p class="text-gray-500 mb-4 text-sm font-medium leading-relaxed line-clamp-2">
-                    <%= scheme.desc %>
-                </p>
-                
-                <button onclick="SchemeVoice.speakScheme('<%= scheme.name %>', '<%= scheme.desc %>')" 
-                        class="speak-btn mb-4 w-full" 
-                        title="Listen to scheme details">
-                    🔊 Listen
-                </button>
-                
-                <div class="flex gap-3 mt-auto">
-
-    <!-- VIEW DETAILS -->
-    <a href="https://pmkisan.gov.in/homenew.aspx"
-       target="_blank"
-       class="flex-1 py-3 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 transition flex items-center justify-center">
-        View Details
-    </a>
-
-    <!-- APPLY NOW -->
-    <a href="https://pmkisan.gov.in/RegistrationFormupdated.aspx"
-       target="_blank"
-       class="flex-1 btn-gold py-3 rounded-xl font-bold text-sm text-white transition flex items-center justify-center">
-        Apply Now
-    </a>
-
-</div>
-
+                <div class="absolute -bottom-10 -right-10 text-green-50 transform rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-500">
+                    <svg class="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 4.5l6 12H6l6-12z"/></svg> </div>
             </div>
             <% }) %>
-
         </div>
 
         <div id="noResults" class="hidden text-center py-20">
-            <div class="inline-block p-4 rounded-full bg-gray-100 mb-3">
-                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            </div>
-            <h3 class="text-xl font-bold text-gray-500">No schemes found</h3>
+            <div class="text-6xl mb-4">🍂</div>
+            <h3 class="text-2xl font-bold text-gray-400">No schemes found here.</h3>
         </div>
+
     </section>
 
     <%- include("../layouts/footer") %>
-
-    <!-- Include voice functionality -->
+    
     <script src="/js/voiceOver.js"></script>
-    <script src="/js/schemeVoice.js"></script>
 
     <script>
+        // --- 1. Scheme Voice Controller ---
+        (function () {
+            window.SchemeVoice = {
+                speakScheme: function(name, desc) {
+                    const text = `${name}. ${desc}`;
+                    if (window.voiceSpeak) window.voiceSpeak(text);
+                },
+                readAllSchemes: function() {
+                    const cards = document.querySelectorAll('.scheme-card:not([style*="display: none"])');
+                    const btn = document.getElementById('voiceMainBtn');
+                    
+                    if(btn) btn.classList.add('animate-[photosynthesis_2s_infinite]'); // Add pulse
+
+                    if (cards.length === 0) {
+                        if (window.voiceSpeak) window.voiceSpeak("No visible schemes found.");
+                        if(btn) btn.classList.remove('animate-[photosynthesis_2s_infinite]');
+                        return;
+                    }
+
+                    let schemeList = `I found ${cards.length} schemes for you. `;
+                    cards.forEach((card, index) => {
+                        const name = card.querySelector('h3')?.textContent.trim() || '';
+                        const desc = card.querySelector('p')?.textContent.trim() || '';
+                        schemeList += `Scheme ${index + 1}: ${name}. ${desc}. `;
+                    });
+
+                    if (window.voiceSpeak) window.voiceSpeak(schemeList);
+                    
+                    // Stop animation after some time
+                    setTimeout(() => { if(btn) btn.classList.remove('animate-[photosynthesis_2s_infinite]'); }, 6000);
+                },
+                stopReading: function() {
+                    if (window.voiceStop) window.voiceStop();
+                    const btn = document.getElementById('voiceMainBtn');
+                    if(btn) btn.classList.remove('animate-[photosynthesis_2s_infinite]');
+                },
+                speakSearchResults: function(count) {
+                    const message = count === 0 ? "No schemes found." : `Found ${count} schemes.`;
+                    if (window.voiceSpeak) window.voiceSpeak(message);
+                }
+            };
+
+            // Inject "Friendly" Voice Dock
+            document.addEventListener('DOMContentLoaded', function() {
+                const dockHTML = `
+                    <div id="schemeVoiceControls" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end" style="animation: slideUpFade 0.6s ease-out backwards">
+                        <button onclick="SchemeVoice.stopReading()" class="w-12 h-12 rounded-full bg-red-100 text-red-600 border-2 border-red-200 shadow-md flex items-center justify-center hover:scale-110 transition-transform mb-2" title="Stop Talking">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
+                        </button>
+                        
+                        <button id="voiceMainBtn" onclick="SchemeVoice.readAllSchemes()" 
+                                class="btn-leaf px-6 py-4 rounded-full text-white font-bold text-lg shadow-xl flex items-center gap-3 hover:scale-105 transition-transform group">
+                             <span>🔊 Read Page</span>
+                        </button>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', dockHTML);
+            });
+        })();
+
+        // --- 2. Page Functionality ---
         let voiceEnabled = localStorage.getItem('aarohi_voice_enabled') !== 'false';
-        
-        // Initialize voice button state
-        document.addEventListener('DOMContentLoaded', function() {
-            updateVoiceButtonState();
-            loadLanguageSelection();
-        });
-        
+
         function toggleVoiceFeature() {
             voiceEnabled = !voiceEnabled;
             localStorage.setItem('aarohi_voice_enabled', voiceEnabled);
+            if (window.voiceToggle) window.voiceToggle(voiceEnabled);
             
-            if (window.voiceToggle) {
-                window.voiceToggle(voiceEnabled);
-            }
-            
-            updateVoiceButtonState();
-            
-            if (voiceEnabled && window.voiceSpeak) {
-                window.voiceSpeak("Voice enabled");
-            }
-        }
-        
-        function updateVoiceButtonState() {
+            // Visual Update
             const btn = document.getElementById('voiceToggleBtn');
-            if (btn) {
-                if (voiceEnabled) {
-                    btn.textContent = '🔊 Voice On';
-                    btn.classList.remove('bg-gray-500');
-                    btn.classList.add('bg-green-500', 'hover:bg-green-600');
-                } else {
-                    btn.textContent = '🔇 Voice Off';
-                    btn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                    btn.classList.add('bg-gray-500');
-                }
+            if (voiceEnabled) {
+                btn.classList.replace('bg-gray-300', 'bg-yellow-400');
+                btn.classList.replace('text-gray-700', 'text-yellow-900');
+                if(window.voiceSpeak) window.voiceSpeak("Voice On");
+            } else {
+                btn.classList.replace('bg-yellow-400', 'bg-gray-300');
+                btn.classList.replace('text-yellow-900', 'text-gray-700');
             }
+            
+            // Show/Hide Dock
+            const dock = document.getElementById('schemeVoiceControls');
+            if(dock) dock.style.display = voiceEnabled ? 'flex' : 'none';
         }
-        
+
         function changeLanguage(lang) {
             localStorage.setItem('aarohi_lang', lang);
-            
-            if (window.voiceSetLang) {
-                window.voiceSetLang(lang);
-            }
-            
-            // Reload page with new language
+            if (window.voiceSetLang) window.voiceSetLang(lang);
             window.location.href = window.location.pathname + '?lang=' + lang;
         }
-        
-        function loadLanguageSelection() {
+
+        document.addEventListener('DOMContentLoaded', function() {
             const langSelect = document.getElementById('langSelect');
-            if (langSelect) {
-                const currentLang = localStorage.getItem('aarohi_lang') || 'en';
-                langSelect.value = currentLang;
+            if (langSelect) langSelect.value = localStorage.getItem('aarohi_lang') || 'en';
+            
+            // Initial button state
+            const btn = document.getElementById('voiceToggleBtn');
+            if (!voiceEnabled) {
+                btn.classList.remove('bg-yellow-400', 'text-yellow-900');
+                btn.classList.add('bg-gray-300', 'text-gray-700');
             }
-        }
+            // Hide dock initially if voice disabled
+            const dock = document.getElementById('schemeVoiceControls');
+            if(dock && !voiceEnabled) dock.style.display = 'none';
+        });
 
         function filterSchemes(filter) {
             const searchInput = document.getElementById("schemeSearch").value.toLowerCase();
@@ -300,34 +339,34 @@
             let count = 0;
 
             document.querySelectorAll(".filter-btn").forEach(btn => {
-                btn.classList.remove("active");
-                if(btn.getAttribute("data-filter") === filter) btn.classList.add("active");
+                btn.classList.remove("active", "bg-green-100", "text-green-800", "border-transparent");
+                btn.classList.add("bg-white", "text-gray-600", "border-gray-100");
+                
+                if(btn.dataset.filter === filter) {
+                    btn.classList.remove("bg-white", "text-gray-600", "border-gray-100");
+                    btn.classList.add("active", "bg-green-100", "text-green-800", "border-transparent");
+                }
             });
 
             cards.forEach(card => {
-                const state = card.getAttribute("data-state");
-                const type = card.getAttribute("data-type");
-                const name = card.getAttribute("data-name");
+                const state = card.dataset.state;
+                const type = card.dataset.type;
+                const name = card.dataset.name;
 
                 const categoryMatch = (filter === 'all' || state === filter || type === filter);
                 const searchMatch = name.includes(searchInput) || type.toLowerCase().includes(searchInput);
 
                 if (categoryMatch && searchMatch) {
                     card.style.display = "block";
-                    // Reset animation
+                    // Re-trigger sprout animation
                     card.style.animation = 'none';
                     card.offsetHeight; 
-                    card.style.animation = 'powerSlide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
+                    card.style.animation = 'sprout 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
                     count++;
                 } else {
                     card.style.display = "none";
                 }
             });
-            
-            // Announce filter change
-            if (voiceEnabled && window.SchemeVoice) {
-                window.SchemeVoice.speakSearchResults(count);
-            }
 
             if (count === 0) {
                 noResults.classList.remove("hidden");

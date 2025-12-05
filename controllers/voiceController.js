@@ -1,6 +1,7 @@
 // controllers/voiceController.js
 require("dotenv").config();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const voiceCommandHelper = require("../helpers/voiceCommandHelper");
 
 // Initialize Gemini AI with error handling
 let genAI;
@@ -16,10 +17,10 @@ try {
     model = genAI.getGenerativeModel({ 
         model: "gemini-1.5-flash",
         generationConfig: {
-            temperature: 0.3, // Lower temperature for more consistent routing
+            temperature: 0.2,
             topK: 20,
             topP: 0.8,
-            maxOutputTokens: 256, // Short responses needed
+            maxOutputTokens: 200,
         }
     });
     console.log('[Voice] Navigation engine initialized successfully');
@@ -27,83 +28,80 @@ try {
     console.error('[Voice] Failed to initialize:', error.message);
 }
 
-// Intent to route mapping for validation
-const VALID_INTENTS = {
-    // Home
-    'open_home': '/',
+// Comprehensive Intent to Route Mapping with aliases
+const INTENT_ROUTING = {
+    // Home & Dashboard
+    'open_home': { route: '/', aliases: ['home', 'मुखपृष्ठ', 'ಮುಖಪುಟ', 'dashboard_home'] },
+    'open_farmer_dashboard': { route: '/dashboard', aliases: ['dashboard', 'डैशबोर्ड', 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್', 'my_dashboard', 'profile'] },
     
-    // Community
-    'open_community': '/community',
-    'open_community_feed': '/community',
-    'open_create_post': '/community/new',
-    'open_post_details': '/community/:id',
-    'open_my_posts': '/dashboard',
-    'open_chat': '/community/chat',
-    'open_groups_list': '/community/chat',
-    'open_start_group_chat': '/community/chat/create',
+    // Community & Social
+    'open_community': { route: '/community', aliases: ['community', 'समुदाय', 'ಸಮುದಾಯ', 'feed', 'posts'] },
+    'open_community_feed': { route: '/community', aliases: ['community_feed', 'posts_feed'] },
+    'open_create_post': { route: '/community/new', aliases: ['create_post', 'new_post', 'पोस्ट_बनाओ', 'ಪೋಸ್ಟ್_ರಚಿಸಿ', 'write', 'share'] },
+    'open_post_details': { route: '/community/:id', aliases: ['view_post', 'post_details'] },
+    'open_my_posts': { route: '/dashboard', aliases: ['my_posts', 'मेरी_पोस्ट', 'ನನ್ನ_ಪೋಸ್ಟ್‌ಗಳು'] },
     
-    // Problems
-    'open_problems': '/community/problems',
-    'open_report_problem': '/community/problems/new',
-    'open_problem_details': '/community/problems/:id',
-    'open_my_problems': '/dashboard',
+    // Chat & Messaging
+    'open_chat': { route: '/community/chat', aliases: ['chat', 'group_chat', 'चैट', 'ಚಾಟ್', 'messages', 'groups', 'talk'] },
+    'open_groups_list': { route: '/community/chat', aliases: ['groups', 'group_list', 'समूह', 'ಗುಂಪುಗಳು'] },
+    'open_start_group_chat': { route: '/community/chat/create', aliases: ['create_group', 'new_group', 'start_chat', 'नया_समूह', 'ಹೊಸ_ಗುಂಪು'] },
+    
+    // Problems & Support
+    'open_problems': { route: '/community/problems', aliases: ['problems', 'समस्या', 'ಸಮಸ್ಯೆ', 'issues', 'help'] },
+    'open_report_problem': { route: '/community/problems/new', aliases: ['report_problem', 'new_problem', 'समस्या_बताओ', 'ಸಮಸ್ಯೆ_ವರದಿ', 'issue'] },
+    'open_problem_details': { route: '/community/problems/:id', aliases: ['view_problem', 'problem_details'] },
     
     // Animals
-    'open_animals_list': '/animals',
-    'open_add_animal': '/animals/new',
-    'open_animal_details': '/animals/:id',
+    'open_animals_list': { route: '/animals', aliases: ['animals', 'पशु', 'ಪ್ರಾಣಿ', 'livestock', 'cattle', 'sell_animal', 'buy_animal', 'trade'] },
+    'open_add_animal': { route: '/animals/new', aliases: ['add_animal', 'list_animal', 'पशु_बेचो', 'ಪ್ರಾಣಿ_ಮಾರಾಟ', 'sell_livestock'] },
+    'open_animal_details': { route: '/animals/:id', aliases: ['view_animal', 'animal_details'] },
     
     // Crops
-    'open_crops_list': '/crops',
-    'open_add_crop': '/crops/new',
-    'open_crop_details': '/crops/:id',
+    'open_crops_list': { route: '/crops', aliases: ['crops', 'फसल', 'ಬೆಳೆ', 'harvest', 'sell_crops', 'farming'] },
+    'open_add_crop': { route: '/crops/new', aliases: ['add_crop', 'list_crop', 'फसल_बेचो', 'ಬೆಳೆ_ಮಾರಾಟ', 'sell_harvest'] },
+    'open_crop_details': { route: '/crops/:id', aliases: ['view_crop', 'crop_details'] },
     
-    // Stock
-    'open_stock': '/stock',
-    'open_stock_list': '/stock',
-    'open_add_stock': '/stock/dealer/new',
-    'open_stock_details': '/stock/:id',
-    'open_dealer_dashboard': '/stock/dealer',
+    // Stock/Marketplace
+    'open_stock': { route: '/stock', aliases: ['stock', 'बाज़ार', 'ಮಾರುಕಟ್ಟೆ', 'market', 'supplies', 'buy', 'seeds', 'fertilizer'] },
+    'open_stock_list': { route: '/stock', aliases: ['stock_list', 'marketplace'] },
+    'open_add_stock': { route: '/stock/dealer/new', aliases: ['add_stock', 'list_stock', 'स्टॉक_जोड़ो', 'ಸ್ಟಾಕ್_ಸೇರಿಸಿ'] },
+    'open_stock_details': { route: '/stock/:id', aliases: ['view_stock', 'stock_details'] },
+    'open_dealer_dashboard': { route: '/stock/dealer', aliases: ['dealer_dashboard', 'dealer_panel'] },
     
-    // Tele-Vet
-    'open_tele_vet': '/tele-vet',
-    'open_vet_list': '/tele-vet',
-    'open_start_vet_call': '/tele-vet/farmer/call/:id',
-    'open_vet_dashboard': '/tele-vet/doctor/dashboard',
-    'open_vet_login': '/vet-auth/login',
+    // Tele-Vet (Doctor Support)
+    'open_tele_vet': { route: '/tele-vet', aliases: ['vet', 'doctor', 'डॉक्टर', 'ವೈದ್ಯ', 'animal_health', 'vet_support', 'telecall', 'veterinary'] },
+    'open_vet_list': { route: '/tele-vet', aliases: ['vet_list', 'doctors', 'available_vets'] },
+    'open_start_vet_call': { route: '/tele-vet/farmer/call/:id', aliases: ['call_vet', 'vet_call', 'speak_doctor'] },
+    'open_vet_dashboard': { route: '/tele-vet/doctor/dashboard', aliases: ['vet_dashboard', 'doctor_dashboard'] },
+    'open_vet_login': { route: '/vet-auth/login', aliases: ['vet_login', 'doctor_login'] },
     
     // Dealers
-    'open_dealer_login': '/dealer-auth/login',
+    'open_dealer_login': { route: '/dealer-auth/login', aliases: ['dealer_login', 'dealer_signin'] },
     
-    // Auth & User
-    'open_login': '/auth/login',
-    'open_register': '/auth/register',
-    'open_profile': '/auth/profile',
-    'open_farmer_dashboard': '/dashboard',
+    // Authentication
+    'open_login': { route: '/auth/login', aliases: ['login', 'लॉगिन', 'ಲಾಗಿನ್', 'signin', 'sign_in'] },
+    'open_register': { route: '/auth/register', aliases: ['register', 'signup', 'sign_up', 'पंजीकरण', 'ನೋಂದಣಿ'] },
+    'open_profile': { route: '/auth/profile', aliases: ['profile', 'my_profile', 'प्रोफाइल', 'ಪ್ರೊಫೈಲ್', 'account', 'settings'] },
     
     // Schemes
-    'open_schemes': '/schemes',
-    'open_scheme_details': '/schemes/:id',
+    'open_schemes': { route: '/schemes', aliases: ['schemes', 'योजना', 'ಯೋಜನೆ', 'subsidies', 'benefits', 'government', 'govt'] },
+    'open_scheme_details': { route: '/schemes/:id', aliases: ['scheme_details', 'view_scheme'] },
     
     // AI Assistant
-    'open_ai_assistant': '/ai/assistant',
+    'open_ai_assistant': { route: '/ai/assistant', aliases: ['ai', 'assistant', 'एआई', 'ಎಐ', 'chatbot', 'help', 'ask', 'question'] },
     
-    // Call System
-    'open_farmer_call_list': '/call/farmers',
-    'open_call_room': '/call/room/:id'
+    // Calls & Video
+    'open_farmer_call_list': { route: '/call/farmers', aliases: ['calls', 'call_list', 'कॉल', 'ಕರೆ'] },
+    'open_call_room': { route: '/call/room/:id', aliases: ['call_room', 'video_call'] },
 };
 
 // Helper function to clean AI response
 function cleanAIResponse(text) {
     if (!text) return null;
     
-    // Remove markdown code blocks
     text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
-    
-    // Remove extra whitespace
     text = text.trim();
     
-    // Try to extract JSON if wrapped in text
     const jsonMatch = text.match(/\{[^}]+\}/);
     if (jsonMatch) {
         text = jsonMatch[0];
@@ -128,8 +126,8 @@ function parseIntent(text) {
             return 'open_home';
         }
         
-        // Validate intent exists in our mapping
-        if (VALID_INTENTS[parsed.intent]) {
+        // Validate intent exists in our routing
+        if (INTENT_ROUTING[parsed.intent]) {
             return parsed.intent;
         }
         
@@ -138,7 +136,6 @@ function parseIntent(text) {
         
     } catch (err) {
         console.error('[Voice] JSON parse error:', err.message);
-        console.error('[Voice] Raw text was:', text);
         return 'open_home';
     }
 }
@@ -146,218 +143,126 @@ function parseIntent(text) {
 // Main navigation processing function
 exports.processNavigation = async (req, res) => {
     try {
-        // Validate request
         if (!req.body || typeof req.body.query !== 'string') {
             return res.status(400).json({ 
-                error: 'Invalid request: query must be a string',
+                success: false,
+                error: 'Invalid request',
                 intent: 'open_home',
                 route: '/'
             });
         }
 
         const userQuery = req.body.query.trim();
+        const language = req.body.language || 'en';
+        const context = req.body.context || {};
         
         if (!userQuery) {
             return res.status(400).json({ 
-                error: 'Empty query provided',
+                success: false,
+                error: 'Empty query',
                 intent: 'open_home',
                 route: '/'
             });
         }
 
-        console.log('[Voice] Processing query:', userQuery);
+        console.log('[Voice] Query:', userQuery, '| Lang:', language, '| Path:', context.currentPath);
 
-        // Check if AI is initialized
+        // Try fast path with command helper first
+        const fastMatch = voiceCommandHelper.processCommand(userQuery, language);
+        if (fastMatch && fastMatch.matched) {
+            console.log('[Voice] Fast match found:', fastMatch.intent, 'confidence:', fastMatch.confidence);
+            const routing = INTENT_ROUTING[fastMatch.intent];
+            return res.json({ 
+                success: true,
+                intent: fastMatch.intent,
+                route: routing ? routing.route : '/',
+                query: userQuery,
+                language,
+                method: 'alias_match',
+                confidence: fastMatch.confidence
+            });
+        }
+
         if (!model) {
-            console.error('[Voice] AI model not initialized');
             return res.status(503).json({ 
-                error: 'Navigation service unavailable',
+                success: false,
+                error: 'Service unavailable',
                 intent: 'open_home',
                 route: '/'
             });
         }
 
-        // Build the prompt
-        const prompt = `You are the AAROHI Navigation Engine.
+        // Build enhanced prompt with language and context
+        const languageGuide = {
+            en: 'English (en-IN)',
+            hi: 'Hindi (hi-IN)',
+            kn: 'Kannada (kn-IN)'
+        }[language] || 'English';
 
-Your ONLY job: Given a user's speech (Kannada/Hindi/English/mixed), return EXACTLY ONE INTENT that tells which page should open.
+        const prompt = `You are the AAROHI Voice Navigation Engine.
+
+USER LANGUAGE: ${languageGuide}
+CURRENT PAGE: ${context.currentPath || '/'}
+USER QUERY: "${userQuery}"
 
 CRITICAL RULES:
-1. Respond ONLY with JSON: {"intent":"exact_intent_name"}
-2. NO explanation, NO extra text, NO markdown
-3. Choose the CLOSEST matching intent from the list below
-4. If unclear or unrelated, return: {"intent":"open_home"}
-5. Match user language keywords to appropriate pages
+1. Respond ONLY with: {"intent":"intent_name"}
+2. NO explanation, markdown, or extra text
+3. Choose the BEST matching intent
+4. If unclear → return {"intent":"open_home"}
+5. Consider user's language for keyword matching
 
-VALID INTENTS:
-Home: open_home
-Community: open_community, open_create_post, open_post_details, open_chat, open_groups_list
-Problems: open_problems, open_report_problem, open_problem_details
-Animals: open_animals_list, open_add_animal, open_animal_details
-Crops: open_crops_list, open_add_crop, open_crop_details
-Stock: open_stock_list, open_add_stock, open_stock_details, open_dealer_dashboard
-Vet: open_tele_vet, open_vet_list, open_start_vet_call, open_vet_dashboard
-Auth: open_login, open_register, open_profile, open_farmer_dashboard
-Schemes: open_schemes, open_scheme_details
-AI: open_ai_assistant
-Calls: open_farmer_call_list, open_call_room
+AVAILABLE INTENTS (choose one):
+${Object.keys(INTENT_ROUTING).join(', ')}
 
-LANGUAGE HINTS:
-- "ಮನೆ/घर/home" → open_home
-- "ಸಮುದಾಯ/समुदाय/community" → open_community
-- "ಸಮಸ್ಯೆ/समस्या/problem" → open_problems
-- "ಪ್ರಾಣಿ/पशु/animal" → open_animals_list
-- "ಬೆಳೆ/फसल/crop" → open_crops_list
-- "ವೈದ್ಯ/डॉक्टर/doctor/vet" → open_tele_vet
-- "ಯೋಜನೆ/योजना/scheme" → open_schemes
-- "AI/ಎಐ/एआई" → open_ai_assistant
+LANGUAGE-SPECIFIC KEYWORDS:
+English: home, dashboard, community, chat, problems, animals, crops, stock, vet, schemes, ai, login
+Hindi: घर, डैशबोर्ड, समुदाय, चैट, समस्या, पशु, फसल, बाज़ार, डॉक्टर, योजना, एआई
+Kannada: ಮನೆ, ಡ್ಯಾಶ್‌ಬೋರ್ಡ್, ಸಮುದಾಯ, ಚಾಟ್, ಸಮಸ್ಯೆ, ಪ್ರಾಣಿ, ಬೆಳೆ, ಮಾರುಕಟ್ಟೆ, ವೈದ್ಯ, ಯೋಜನೆ
 
-User said: "${userQuery}"
+Respond with JSON only:`;
 
-Respond with ONLY: {"intent":"..."}`;
-
-        // Generate response with timeout
         const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('AI request timeout')), 10000)
+            setTimeout(() => reject(new Error('timeout')), 8000)
         );
 
         const aiPromise = model.generateContent(prompt);
-        
         const result = await Promise.race([aiPromise, timeoutPromise]);
         const response = await result.response;
         const text = response.text().trim();
 
-        console.log('[Voice] AI raw response:', text);
+        console.log('[Voice] AI response:', text);
 
-        // Parse and validate the intent
         const intent = parseIntent(text);
-        const route = VALID_INTENTS[intent] || '/';
+        const routing = INTENT_ROUTING[intent];
+        const route = routing ? routing.route : '/';
 
-        console.log('[Voice] Resolved intent:', intent, '→', route);
+        console.log('[Voice] Intent:', intent, '→ Route:', route);
 
         return res.json({ 
             success: true,
             intent,
             route,
-            query: userQuery
+            query: userQuery,
+            language,
+            method: 'ai_match',
+            confidence: 0.8
         });
 
     } catch (err) {
-        console.error('[Voice] Navigation error:', err);
+        console.error('[Voice] Error:', err.message);
 
-        // Handle specific errors
-        if (err.message?.includes('timeout')) {
-            return res.status(504).json({ 
-                error: 'Navigation request timeout',
-                intent: 'open_home',
-                route: '/'
-            });
-        }
+        let errorCode = 500;
+        if (err.message?.includes('timeout')) errorCode = 504;
+        if (err.message?.includes('API key')) errorCode = 500;
+        if (err.message?.includes('quota') || err.message?.includes('rate limit')) errorCode = 429;
 
-        if (err.message?.includes('API key')) {
-            return res.status(500).json({ 
-                error: 'Navigation service configuration error',
-                intent: 'open_home',
-                route: '/'
-            });
-        }
-
-        if (err.message?.includes('quota') || err.message?.includes('rate limit')) {
-            return res.status(429).json({ 
-                error: 'Navigation service busy, please try again',
-                intent: 'open_home',
-                route: '/'
-            });
-        }
-
-        // Generic error
-        return res.status(500).json({ 
-            error: 'Voice processing failed',
+        return res.status(errorCode).json({ 
+            success: false,
+            error: 'Processing failed',
             intent: 'open_home',
             route: '/',
             details: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
     }
 };
-
-// Get all available intents (for debugging/documentation)
-exports.getAvailableIntents = async (req, res) => {
-    try {
-        return res.json({
-            success: true,
-            intents: Object.keys(VALID_INTENTS),
-            mapping: VALID_INTENTS,
-            count: Object.keys(VALID_INTENTS).length
-        });
-    } catch (err) {
-        console.error('[Voice] Get intents error:', err);
-        return res.status(500).json({ 
-            error: 'Failed to fetch intents',
-            success: false 
-        });
-    }
-};
-
-// Test navigation with sample queries
-exports.testNavigation = async (req, res) => {
-    try {
-        const testQueries = [
-            'ಮನೆಗೆ ಹೋಗು', // Go home (Kannada)
-            'घर जाओ', // Go home (Hindi)
-            'take me home', // English
-            'show me animals', // Animals list
-            'ವೈದ್ಯರನ್ನು ಕರೆ', // Call doctor (Kannada)
-            'AI assistant'
-        ];
-
-        const results = [];
-
-        for (const query of testQueries) {
-            try {
-                const mockReq = { body: { query } };
-                const mockRes = {
-                    json: (data) => results.push({ query, ...data }),
-                    status: () => mockRes
-                };
-                await exports.processNavigation(mockReq, mockRes);
-            } catch (err) {
-                results.push({ query, error: err.message });
-            }
-        }
-
-        return res.json({
-            success: true,
-            testResults: results
-        });
-
-    } catch (err) {
-        console.error('[Voice] Test error:', err);
-        return res.status(500).json({ 
-            error: 'Test failed',
-            success: false 
-        });
-    }
-};
-
-// Health check
-exports.healthCheck = async (req, res) => {
-    try {
-        const isConfigured = !!model;
-        
-        return res.json({
-            success: true,
-            status: isConfigured ? 'operational' : 'not_configured',
-            model: 'gemini-1.5-flash',
-            availableIntents: Object.keys(VALID_INTENTS).length,
-            timestamp: new Date().toISOString()
-        });
-    } catch (err) {
-        console.error('[Voice] Health check error:', err);
-        return res.status(500).json({ 
-            error: 'Health check failed',
-            success: false 
-        });
-    }
-};
-
-module.exports = exports;
