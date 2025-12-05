@@ -15,6 +15,9 @@ exports.getDashboard = async (req, res) => {
         if (!req.session.user) return res.redirect("/auth/login");
         const userId = (req.session.user && req.session.user._id) || null;
         
+        // Get current language from query, cookie, or default to 'en'
+        const lang = req.query.lang || req.cookies.aarohi_lang || 'en';
+        
         // Prefer fresh DB copy when possible, fall back to session user object
         let user = req.session.user;
         if (userId) {
@@ -40,7 +43,7 @@ exports.getDashboard = async (req, res) => {
         const recentActivity = []; 
 
         // ==========================================
-        // 2. WEATHER & AI LOGIC (FIXED)
+        // 2. WEATHER & AI LOGIC (FIXED WITH LANGUAGE SUPPORT)
         // ==========================================
         let weatherData = null;
         let aiAdvice = "Currently, no advice is available. Please update your location.";
@@ -50,7 +53,7 @@ exports.getDashboard = async (req, res) => {
 
         // Get API key
         const apiKey = process.env.WEATHER_API_KEY || process.env.OPENWEATHERMAP_API_KEY;
-        console.log('[dashboard] locationQuery=', locationQuery, 'apiKeyPresent=', !!apiKey);
+        console.log('[dashboard] locationQuery=', locationQuery, 'lang=', lang, 'apiKeyPresent=', !!apiKey);
 
         if (locationQuery && apiKey) {
             try {
@@ -78,23 +81,38 @@ exports.getDashboard = async (req, res) => {
 
                 console.log('[dashboard] Weather data processed:', weatherData.length, 'days');
 
-                // C. Ask AI for Advice
+                // C. Ask AI for Advice (WITH LANGUAGE SUPPORT)
                 if (process.env.AI_API_KEY) {
                     try {
+                        // Language-specific prompt instructions
+                        let langInstruction = "English";
+                        let responseFormat = "English";
+                        
+                        if (lang === 'hi') {
+                            langInstruction = "Hindi (हिंदी)";
+                            responseFormat = "Hindi";
+                        } else if (lang === 'kn') {
+                            langInstruction = "Kannada (ಕನ್ನಡ)";
+                            responseFormat = "Kannada";
+                        }
+
                         const prompt = `
                             I am a farmer in ${locationQuery}. 
                             The weather forecast for the next 5 days is: ${JSON.stringify(weatherData)}.
+                            
+                            Please respond ONLY in ${langInstruction}.
                             
                             Based strictly on this weather, provide:
                             1. A 1-sentence warning or green flag.
                             2. A bullet list (<ul><li>) of 3 actionable tasks (e.g., "Irrigate tomorrow", "Spray fungicide").
                             
                             Format the response as raw HTML without markdown code blocks.
+                            Language: ${responseFormat}
                         `;
                         
                         const aiResult = await model.generateContent(prompt);
                         aiAdvice = aiResult.response.text();
-                        console.log('[dashboard] AI advice generated successfully');
+                        console.log('[dashboard] AI advice generated successfully in', langInstruction);
                     } catch (aiErr) {
                         console.error('[dashboard] AI generation failed:', aiErr.message);
                         aiAdvice = `Weather: ${weatherData[0].desc}, ${weatherData[0].temp}°C. Check forecast for field planning.`;
@@ -151,11 +169,14 @@ exports.getDashboard = async (req, res) => {
         // ==========================================
         // 3. RENDER THE DASHBOARD
         // ==========================================
-        console.log('[dashboard] Rendering with weather:', !!weatherData, 'advice:', !!aiAdvice);
+        console.log('[dashboard] Rendering with weather:', !!weatherData, 'advice:', !!aiAdvice, 'lang:', lang);
         
         res.render('dashboard/dashboard', {
             // User Data
             user: user,
+            
+            // Language
+            lang: lang,
             
             // Weather Feature Data
             weather: weatherData,

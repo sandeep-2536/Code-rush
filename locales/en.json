@@ -114,7 +114,31 @@
       "crops": "Crops Listed",
       "vet_calls": "Tele-Vet Calls",
       "ai_queries": "AI Assistant Queries",
-      "stock_checks": "Stock Checks"
+      "stock_checks": "Stock Checks",
+      "issues": "Issues"
+    },
+    "weather": {
+      "title": "5-Day Temperature Trend",
+      "current_status": "Current Status",
+      "farm_impact": "Farm Impact",
+      "rain_expected": "Rain expected. Pause Spraying.",
+      "good_conditions": "Good conditions for field work.",
+      "forecast": "Forecast",
+      "loading": "Loading..."
+    },
+    "ai": {
+      "title": "AI Farm Insight",
+      "analyzing": "AI is analyzing weather data..."
+    },
+    "location_modal": {
+      "title": "Set Your Location",
+      "subtitle": "Help us provide weather-based farm advice",
+      "village_label": "Village/City",
+      "village_placeholder": "e.g., Bengaluru",
+      "village_hint": "💡 Use a well-known city name if your village is small",
+      "state_label": "State",
+      "state_placeholder": "e.g., Karnataka",
+      "save_btn": "Save Location & Get Weather"
     },
     "nav": {
       "title": "🚀 Quick Navigation",
@@ -122,7 +146,16 @@
       "problems": "Problems",
       "stock_q": "Where is Stock?"
     },
-    "recent_activity": "📌 Recent Activity"
+    "recent_activity": "📌 Recent Activity",
+    "voice": {
+      "speak_weather": "🔊 Read Weather",
+      "speak_advice": "🔊 Read Advice",
+      "speak_all": "🔊 Read All",
+      "toggle_on": "🔊 Voice On",
+      "toggle_off": "🔇 Voice Off",
+      "language": "Language",
+      "region": "Region"
+    }
   },
   "schemes": {
     "page_title": "Government Schemes - Aarohi Agriculture",
