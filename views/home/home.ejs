@@ -50,6 +50,54 @@
         .portal-card img {
             transition: transform 0.7s ease;
         }
+
+        /* Video Container Styles */
+        .video-tutorial-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .video-tutorial-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+        .video-tutorial-section::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 8s ease-in-out infinite reverse;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+        .compact-video-container {
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            max-width: 800px;
+            margin: 0 auto;
+            background: black;
+        }
+        .compact-video-container video {
+            width: 100%;
+            height: auto;
+            display: block;
+            background: black;
+        }
     </style>
 </head>
 <body class="bg-gray-50 antialiased" data-i18n-voice="home.voiceIntro" data-lang="<%= lang %>">
@@ -159,6 +207,31 @@
                 </div>
             </div>
 
+        </div>
+    </section>
+
+    <!-- Compact Video Tutorial Section -->
+    <section class="video-tutorial-section py-16 px-4 relative">
+        <div class="max-w-5xl mx-auto relative z-10">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"/>
+                    </svg>
+                    <span class="text-white font-semibold text-sm uppercase tracking-wider">Quick Tutorial</span>
+                </div>
+                <h2 class="text-3xl md:text-4xl font-black text-white mb-2">
+                    Learn How to Use Aarohi
+                </h2>
+                <p class="text-white/90 font-medium">A quick guide to get you started in minutes</p>
+            </div>
+            
+            <div class="compact-video-container">
+                <video controls controlsList="nodownload" preload="metadata">
+                    <source src="/Aarohi.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
         </div>
     </section>
 
