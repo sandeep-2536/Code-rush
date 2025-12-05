@@ -54,7 +54,7 @@ const isVetAuth = (req, res, next) => {
 router.get("/", async (req, res) => {
   try {
     const vets = await Vet.find({}).select("-password");
-    res.render("televet/vet-list", {
+    res.render("televet/vetList", {
       vets,
       farmer: req.session.user
     });
@@ -161,7 +161,7 @@ router.get("/vet/dashboard", isVetAuth, async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(10);
 
-    res.render("televet/vet-dashboard", {
+    res.render("teleVet/vetDashboard", {
       vet: req.session.vet,
       pendingCalls,
       callHistory
