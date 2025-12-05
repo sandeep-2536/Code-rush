@@ -81,7 +81,8 @@
     "search_btn": "Search",
     "available": "Available",
     "call": "Call",
-    "view": "View"
+    "view": "View",
+      "voiceIntro": "Welcome to Aarohi Agriculture. I am your digital farming assistant. Tap or speak to get started."
   },
   "forms": {
     "animal_title": "Add Animal Listing",

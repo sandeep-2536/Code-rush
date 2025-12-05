@@ -54,13 +54,33 @@ const isVetAuth = (req, res, next) => {
 router.get("/", async (req, res) => {
   try {
     const vets = await Vet.find({}).select("-password");
-    res.render("televet/vetList", {
+    res.render("teleVet/vetList", {
       vets,
       farmer: req.session.user
     });
   } catch (error) {
     console.error("Error fetching vets:", error);
     res.status(500).send("Error loading vets");
+  }
+});
+
+// Farmer initiates call with vet (GET request to show confirmation page)
+router.get("/farmer/call/:vetId", isFarmerAuth, async (req, res) => {
+  try {
+    const { vetId } = req.params;
+    const vet = await Vet.findById(vetId).select("-password");
+    
+    if (!vet) {
+      return res.status(404).send("Veterinarian not found");
+    }
+
+    res.render("teleVet/farmerCall", {
+      vet,
+      farmer: req.session.user
+    });
+  } catch (error) {
+    console.error("Error loading call page:", error);
+    res.status(500).send("Error loading call page");
   }
 });
 
@@ -137,8 +157,6 @@ router.post("/call/initiate/:vetId", isFarmerAuth, async (req, res) => {
   }
 });
 
-// ==================== VET ROUTES ====================
-
 // Vet dashboard - shows pending calls
 router.get("/vet/dashboard", isVetAuth, async (req, res) => {
   try {
@@ -170,6 +188,11 @@ router.get("/vet/dashboard", isVetAuth, async (req, res) => {
     console.error("Error loading vet dashboard:", error);
     res.status(500).send("Error loading dashboard");
   }
+});
+
+// Alias for doctor dashboard (same as vet dashboard)
+router.get("/doctor/dashboard", isVetAuth, async (req, res) => {
+  res.redirect("/televet/vet/dashboard");
 });
 
 // Accept call

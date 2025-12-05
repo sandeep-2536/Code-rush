@@ -6,7 +6,7 @@
     <title>Stock Marketplace - Aarohi</title>
     <link rel="stylesheet" href="/css/output.css">
 </head>
-<body>
+<body  data-voice="Community feed opened. Scroll to read posts." data-lang="<%= userLang %>">
     <%- include('../layouts/header') %>
 
     <div class="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
@@ -276,6 +276,15 @@ function startVoiceSearch() {
         alert('Voice search not supported in your browser');
     }
 }
+
+
+voiceSpeak(
+  {
+    en: "You are on the stock.",
+    hi: "आप समुदाय फ़ीड पर हैं।",
+    kn: "ನೀವು ಸಮುದಾಯ ಫೀಡ್‌ನಲ್ಲಿ ಇದ್ದೀರಿ."
+  }[localStorage.getItem("aarohi_lang") || "en"]
+);
 </script>
 
     <%- include('../layouts/footer') %>
