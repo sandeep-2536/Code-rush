@@ -29,8 +29,21 @@
                 <a href="/community" class="text-white hover:text-green-200 font-medium transition" data-i18n="nav.community">Community</a>
                 
                 <% if (user) { %>
-                <a href="/dashboard" class="flex items-center gap-2 bg-white/20 hover:bg-white/30 rounded-lg px-4 py-2">
-                    <img src="<%= user.profileImage || '/images/default-user.svg' %>" class="w-8 h-8 rounded-full border border-green-300">
+                <a href="/dashboard" class="flex items-center gap-2 bg-white/20 hover:bg-white/30 rounded-lg px-4 py-2 transition-all">
+                    <% if (user.profileImage) { %>
+                        <img src="<%= user.profileImage %>" class="w-8 h-8 rounded-full border-2 border-white object-cover" alt="Profile" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="w-8 h-8 rounded-full bg-green-500 border-2 border-white flex items-center justify-center" style="display: none;">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    <% } else { %>
+                        <div class="w-8 h-8 rounded-full bg-green-500 border-2 border-white flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    <% } %>
                     <span class="text-white font-medium"><%= user.name %></span>
                 </a>
                 <% } else { %>
